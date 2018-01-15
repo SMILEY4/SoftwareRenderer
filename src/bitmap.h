@@ -32,6 +32,8 @@ void bmClear(bitmap_t *bitmap, color_t *color);
 
 void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);
 
+void bmCreateFromPNG(bitmap_t *bitmap, char *filepath);
+
 void bmDispose(bitmap_t *bitmap);
 
 

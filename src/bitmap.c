@@ -1,7 +1,8 @@
 #include "bitmap.h"
+#include "lodepng.h"
 #include <windows.h>
 #include <stdbool.h>
-
+#include <stdio.h>
 
 
 
@@ -58,6 +59,47 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     bitmap->pixels = calloc(width*height, sizeof(pixel_t));
     bitmap->width = width;
     bitmap->height = height;
+}
+
+
+
+
+void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
+
+    // load png
+    unsigned error;
+    unsigned char *image;
+    unsigned w, h;
+    unsigned char *png = 0;
+    size_t  pngsize;
+    error = lodepng_load_file(&png, &pngsize, filepath);
+    if(!error) {
+        error = lodepng_decode32(&image, &w, &h, png, pngsize);
+    }
+    if(error) {
+        printf("error %u: %s\n", error, lodepng_error_text(error));
+    }
+
+    // store in bitmap
+    bmCreate(bitmap, (int)w, (int)h);
+    for(int y=0; y<w; y++) {
+        for (int x=0; x<h; x++) {
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            if(pixel) {
+                int r = (int)(image[4 * y * w + 4 * x + 0]);
+                int g = (int)(image[4 * y * w + 4 * x + 1]);
+                int b = (int)(image[4 * y * w + 4 * x + 2]);
+                int a = (int)(image[4 * y * w + 4 * x + 3]);
+                pixel->color.r = (float)r / 255.0f;
+                pixel->color.g = (float)g / 255.0f;
+                pixel->color.b = (float)b / 255.0f;
+                pixel->color.a = (float)a / 255.0f;
+            }
+        }
+    }
+    // clean up png
+    free(png);
+    free(image);
 }
 
 
