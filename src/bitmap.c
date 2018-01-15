@@ -8,9 +8,9 @@
 
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y) {
     if(x < 0) { goto error; }
-    if(x > bitmap->width) { goto error; }
+    if(x >= bitmap->width) { goto error; }
     if(y < 0) { goto error; }
-    if(y > bitmap->height) { goto error; }
+    if(y >= bitmap->height) { goto error; }
 
     return bitmap->pixels + (bitmap->width*y + x);
 
