@@ -33,7 +33,7 @@ void srRenderWireframe(bitmap_t *bitmap, model_t *model) {
     matrix_t viewProjection = srCamera.viewProjection;
 
     // create model transform
-    static float rotCounter; rotCounter += 0.05;
+    static float rotCounter; rotCounter = 1.0;
     matrix_t translation, rotation, scale, modelTransform;
     matSetTranslation(&translation, 0, 0, 0);
     matSetRotation(&rotation, 0, rotCounter, 0);
@@ -54,10 +54,10 @@ void srRenderWireframe(bitmap_t *bitmap, model_t *model) {
 
         // transform vertices
         vec_t p[3];
-        for(int i=0; i<3; i++) {
-            matTransform(&p[i], &triangle->vertices[i].pos, &mvp);
-            matTransform(&p[i], &p[i], &screenSpaceTransform);
-            vecPerspectiveDivide(&p[i], &p[i]);
+        for(int j=0; j<3; j++) {
+            matTransform(&p[j], &triangle->vertices[j].pos, &mvp);
+            matTransform(&p[j], &p[j], &screenSpaceTransform);
+            vecPerspectiveDivide(&p[j], &p[j]);
         }
 
         // draw triangle

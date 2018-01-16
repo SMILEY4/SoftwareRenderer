@@ -59,8 +59,20 @@ double vecLength(vec_t *v) {
 
 
 
+double vecDist(vec_t *a, vec_t *b) {
+    static vec_t tmp;
+    vecSub(&tmp, a, b);
+    return vecLength(&tmp);
+}
+
+
+
+
 void vecNormalize(vec_t *dst, vec_t *src) {
     const double len = vecLength(src);
+    if(len <= 0) {
+        return;
+    }
     dst->x = src->x / len;
     dst->y = src->y / len;
     dst->z = src->z / len;

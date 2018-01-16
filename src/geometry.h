@@ -36,6 +36,8 @@ void vecCross(vec_t *dst, vec_t *a, vec_t *b);
 
 double vecLength(vec_t *v);
 
+double vecDist(vec_t *a, vec_t *b);
+
 void vecNormalize(vec_t *dst, vec_t *src);
 
 void vecSub(vec_t *dst, vec_t *a, vec_t *b);

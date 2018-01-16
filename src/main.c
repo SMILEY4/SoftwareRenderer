@@ -74,13 +74,13 @@ void create() {
 
 void updateFunc(bitmap_t *displayBuffer) {
 
-    double camSpeed = 0.3 ;
+    double camSpeed = 0.6 ;
     if(w) { camMove(&srCamera, 0,  camSpeed); }
     if(s) { camMove(&srCamera, 0, -camSpeed); }
-    if(a) { camMove(&srCamera, 1, -camSpeed); }
-    if(d) { camMove(&srCamera, 1,  camSpeed); }
-    if(q) { camMove(&srCamera, 2, -camSpeed); }
-    if(e) { camMove(&srCamera, 2,  camSpeed); }
+    if(a) { camMove(&srCamera, 1,  camSpeed); }
+    if(d) { camMove(&srCamera, 1, -camSpeed); }
+    if(q) { camMove(&srCamera, 2,  camSpeed); }
+    if(e) { camMove(&srCamera, 2, -camSpeed); }
 
     srRenderWireframe(displayBuffer, &model);
 }

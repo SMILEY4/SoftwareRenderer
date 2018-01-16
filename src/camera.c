@@ -1,5 +1,6 @@
 #include "camera.h"
-
+#include "geometry.h"
+#include <stdio.h>
 
 void camUpdate(camera_t *cam) {
     matSetLookAt(&cam->view, &cam->pos, &cam->target, &cam->up);
