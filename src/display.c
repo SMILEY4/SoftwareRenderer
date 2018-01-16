@@ -14,6 +14,7 @@ float deltaTime;
 bitmap_t displayBuffer;
 color_t clearColor;
 
+float scale;
 void (*updateFunction)(bitmap_t *bitmap);
 
 
@@ -43,7 +44,7 @@ void displayFunc() {
     (*updateFunction)(&displayBuffer);
 
     glClear(GL_COLOR_BUFFER_BIT);
-    glPointSize(1);
+    glPointSize(1*scale);
     glBegin(GL_POINTS);
 
     for(int y=0; y<displayBuffer.height; y++) {
@@ -77,10 +78,11 @@ void dpStart() {
 
 
 
-void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float fps) {
+void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float scl, float fps) {
+    scale = scl;
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-    glutInitWindowSize(width, height);
+    glutInitWindowSize(width*scale, height*scale);
     glutCreateWindow("Software Renderer - Lukas Ruegner (2018)");
     glutDisplayFunc(displayFunc);
     glutIgnoreKeyRepeat(1);

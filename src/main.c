@@ -14,7 +14,6 @@
 
 
 
-
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
 model_t model;
@@ -96,7 +95,7 @@ void exitFunc() {
 
 
 int main(int argc, char *argv[]) {
-    dpCreate(argc, argv, WIDTH, HEIGHT, 60);
+    dpCreate(argc, argv, WIDTH, HEIGHT, 1.0, 60);
 
     dpSetUpdateFunc(&updateFunc);
     dpSetExitFunc(&exitFunc);

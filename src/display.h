@@ -7,7 +7,7 @@
 
 void dpStart();
 
-void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float fps);
+void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float scale, float fps);
 
 void dpDispose();
 
