@@ -7,7 +7,7 @@
 
 
 
-void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float g, float b) {
+void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color) {
     if(!bitmap) {
         return;
     }
@@ -32,9 +32,9 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float
 
         pixel_t *pixel = bmGetPixelAt(bitmap, currentX, currentY);
         if(pixel) {
-            pixel->color.r = r;
-            pixel->color.g = g;
-            pixel->color.b = b;
+            pixel->color.r = color.r * color.a;
+            pixel->color.g = color.g * color.a;
+            pixel->color.b = color.b * color.a;
             pixel->color.a = 1.0;
         }
 
@@ -58,8 +58,8 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float
 
 
 
-void bhDrawTriangle(bitmap_t *bitmap, int ax, int ay, int bx, int by, int cx, int cy) {
-    bhDrawLine(bitmap, ax, ay, bx, by, 1, 0, 0);
-    bhDrawLine(bitmap, bx, by, cx, cy, 0, 1, 0);
-    bhDrawLine(bitmap, cx, cy, ax, ay, 0, 0, 1);
+void bhDrawTriangle(bitmap_t *bitmap, int ax, int ay, int bx, int by, int cx, int cy, color_t ca, color_t cb, color_t cc) {
+    bhDrawLine(bitmap, ax, ay, bx, by, ca);
+    bhDrawLine(bitmap, bx, by, cx, cy, cb);
+    bhDrawLine(bitmap, cx, cy, ax, ay, cc);
 }

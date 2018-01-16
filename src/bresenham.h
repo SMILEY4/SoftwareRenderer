@@ -3,9 +3,9 @@
 
 #include "bitmap.h"
 
-void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float g, float b);
+void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color);
 
-void bhDrawTriangle(bitmap_t *bitmap, int ax, int ay, int bx, int by, int cx, int cy);
+void bhDrawTriangle(bitmap_t *bitmap, int ax, int ay, int bx, int by, int cx, int cy, color_t ca, color_t cb, color_t cc);
 
 
 #endif

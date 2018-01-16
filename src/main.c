@@ -1,7 +1,13 @@
 #include "display.h"
 #include "bitmap.h"
+#include "objfile.h"
+#include "model.h"
+#include "renderer.h"
+#include "camera.h"
+
 #include <stdbool.h>
 #include <stdio.h>
+
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -11,7 +17,7 @@
 
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
-
+model_t model;
 
 
 
@@ -53,7 +59,30 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
 
 
+void create() {
+    obj_model_t objmodel;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
+    mdlCreateFromObj(&objmodel, &model);
+    objFree(&objmodel);
+
+    srInit(WIDTH, HEIGHT);
+
+}
+
+
+
+
 void updateFunc(bitmap_t *displayBuffer) {
+
+    double camSpeed = 0.3 ;
+    if(w) { camMove(&srCamera, 0,  camSpeed); }
+    if(s) { camMove(&srCamera, 0, -camSpeed); }
+    if(a) { camMove(&srCamera, 1, -camSpeed); }
+    if(d) { camMove(&srCamera, 1,  camSpeed); }
+    if(q) { camMove(&srCamera, 2, -camSpeed); }
+    if(e) { camMove(&srCamera, 2,  camSpeed); }
+
+    srRenderWireframe(displayBuffer, &model);
 }
 
 
@@ -73,6 +102,8 @@ int main(int argc, char *argv[]) {
     dpSetExitFunc(&exitFunc);
     dpSetKeyPressedFunc(&keyPressedFunc);
     dpSetKeyReleasedFunc(&keyReleasedFunc);
+
+    create();
 
     dpStart();
 
