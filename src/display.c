@@ -6,15 +6,21 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 
 
+char *title;
 
 float deltaTime;
-bitmap_t displayBuffer;
 color_t clearColor;
 
-float scale;
+bitmap_t displayBufferFull;
+bitmap_t displayBufferLow;
+bitmap_t *displayBufferCurrent;
+float lowResScale = 4.0;
+int useLowResBuffer = 0;
+
 void (*updateFunction)(bitmap_t *bitmap);
 
 
@@ -40,20 +46,20 @@ void displayFunc() {
     clock_t start, end;
     start = clock();
 
-    bmClear(&displayBuffer, &clearColor);
-    (*updateFunction)(&displayBuffer);
+    bmClear(displayBufferCurrent, &clearColor);
+    (*updateFunction)(displayBufferCurrent);
 
     glClear(GL_COLOR_BUFFER_BIT);
-    glPointSize(1*scale);
+    glPointSize( (useLowResBuffer ? lowResScale : 1) );
     glBegin(GL_POINTS);
 
-    for(int y=0; y<displayBuffer.height; y++) {
-        for(int x=0; x<displayBuffer.width; x++) {
-            pixel_t *pixel = bmGetPixelAt(&displayBuffer, x, y);
+    for(int y=0; y<displayBufferCurrent->height; y++) {
+        for(int x=0; x<displayBufferCurrent->width; x++) {
+            pixel_t *pixel = bmGetPixelAt(displayBufferCurrent, x, y);
             color_t color = pixel->color;
             if(color.a > 0) {
                 glColor4f(color.r, color.g, color.b, color.a);
-                glVertex2f(toGLCoords(x, displayBuffer.width, false), toGLCoords(y, displayBuffer.height, true));
+                glVertex2f(toGLCoords(x, displayBufferCurrent->width, false), toGLCoords(y, displayBufferCurrent->height, true));
             }
         }
     }
@@ -62,7 +68,7 @@ void displayFunc() {
     glutSwapBuffers();
 
     end = clock();
-    float dtms = (float)( ((end - start) / CLOCKS_PER_SEC) * 1000.0 );
+    float dtms = (float)(end - start);
     float sleep = fmaxf(1.0, deltaTime-dtms);
     glutTimerFunc((unsigned int)sleep, timerFunc, 1);
 }
@@ -78,24 +84,27 @@ void dpStart() {
 
 
 
-void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float scl, float fps) {
-    scale = scl;
+void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, float fps) {
+    title = "Software Renderer - Lukas Ruegner (2018)";
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-    glutInitWindowSize(width*scale, height*scale);
-    glutCreateWindow("Software Renderer - Lukas Ruegner (2018)");
+    glutInitWindowSize(width, height);
+    glutCreateWindow(title);
     glutDisplayFunc(displayFunc);
     glutIgnoreKeyRepeat(1);
     deltaTime = (float)(1000.0 / fps);
-    bmCreate(&displayBuffer, width, height);
-    clearColor = (color_t){0, 0, 0, 0};
+    clearColor = (color_t){1, 0, 0, 1};
+    bmCreate(&displayBufferFull, width, height);
+    bmCreate(&displayBufferLow, width/lowResScale, height/lowResScale);
+    displayBufferCurrent = &displayBufferFull;
 }
 
 
 
 
 void dpDispose() {
-    bmDispose(&displayBuffer);
+    bmDispose(&displayBufferFull);
+    bmDispose(&displayBufferLow);
 }
 
 
@@ -110,6 +119,31 @@ void dpSetUpdateFunc( void (*f)(bitmap_t *bitmap) ) {
 
 void dpSetExitFunc( void (*f)(void) ) {
     atexit(f);
+}
+
+
+
+
+void dpUseLowRes() {
+    bmClear(displayBufferCurrent, &clearColor);
+    displayBufferCurrent = &displayBufferLow;
+    useLowResBuffer = 1;
+}
+
+
+
+
+void dpUseFullRes() {
+    bmClear(displayBufferCurrent, &clearColor);
+    displayBufferCurrent = &displayBufferFull;
+    useLowResBuffer = 0;
+}
+
+
+
+
+int dpIsUsingLowRes() {
+    return useLowResBuffer;
 }
 
 

@@ -16,43 +16,44 @@
 
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
+int nKeysDown = 0;
 model_t model;
 
 
 
 void keyReleasedFunc(unsigned char key, int x, int y) {
-    if(key == 'w') { w = false; }
-    if(key == 'a') { a = false; }
-    if(key == 's') { s = false; }
-    if(key == 'd') { d = false; }
-    if(key == 'q') { q = false; }
-    if(key == 'e') { e = false; }
+    if(key == 'w') { w = false; nKeysDown--; }
+    if(key == 'a') { a = false; nKeysDown--; }
+    if(key == 's') { s = false; nKeysDown--; }
+    if(key == 'd') { d = false; nKeysDown--; }
+    if(key == 'q') { q = false; nKeysDown--; }
+    if(key == 'e') { e = false; nKeysDown--; }
 
-    if(key == 'i') { i = false; }
-    if(key == 'j') { j = false; }
-    if(key == 'k') { k = false; }
-    if(key == 'l') { l = false; }
-    if(key == 'u') { u = false; }
-    if(key == 'o') { o = false; }
+    if(key == 'i') { i = false; nKeysDown--; }
+    if(key == 'j') { j = false; nKeysDown--; }
+    if(key == 'k') { k = false; nKeysDown--; }
+    if(key == 'l') { l = false; nKeysDown--; }
+    if(key == 'u') { u = false; nKeysDown--; }
+    if(key == 'o') { o = false; nKeysDown--; }
 }
 
 
 
 
 void keyPressedFunc(unsigned char key, int x, int y) {
-    if(key == 'w') { w = true; }
-    if(key == 'a') { a = true; }
-    if(key == 's') { s = true; }
-    if(key == 'd') { d = true; }
-    if(key == 'q') { q = true; }
-    if(key == 'e') { e = true; }
+    if(key == 'w') { w = true; nKeysDown++; }
+    if(key == 'a') { a = true; nKeysDown++; }
+    if(key == 's') { s = true; nKeysDown++; }
+    if(key == 'd') { d = true; nKeysDown++; }
+    if(key == 'q') { q = true; nKeysDown++; }
+    if(key == 'e') { e = true; nKeysDown++; }
 
-    if(key == 'i') { i = true; }
-    if(key == 'j') { j = true; }
-    if(key == 'k') { k = true; }
-    if(key == 'l') { l = true; }
-    if(key == 'u') { u = true; }
-    if(key == 'o') { o = true; }
+    if(key == 'i') { i = true; nKeysDown++; }
+    if(key == 'j') { j = true; nKeysDown++; }
+    if(key == 'k') { k = true; nKeysDown++; }
+    if(key == 'l') { l = true; nKeysDown++; }
+    if(key == 'u') { u = true; nKeysDown++; }
+    if(key == 'o') { o = true; nKeysDown++; }
 }
 
 
@@ -73,7 +74,7 @@ void create() {
 
 void updateFunc(bitmap_t *displayBuffer) {
 
-    double camSpeed = 0.6 ;
+    double camSpeed = 0.4 ;
     if(w) { camMove(&srCamera, 0,  camSpeed); }
     if(s) { camMove(&srCamera, 0, -camSpeed); }
     if(a) { camMove(&srCamera, 1,  camSpeed); }
@@ -81,7 +82,17 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(q) { camMove(&srCamera, 2,  camSpeed); }
     if(e) { camMove(&srCamera, 2, -camSpeed); }
 
-    srRenderWireframe(displayBuffer, &model);
+    srRender(displayBuffer, &model);
+
+    if(nKeysDown == 0) {
+        if(dpIsUsingLowRes() == 1) {
+            dpUseFullRes();
+        }
+    } else {
+        if(dpIsUsingLowRes() == 0) {
+            dpUseLowRes();
+        }
+    }
 }
 
 
@@ -95,7 +106,7 @@ void exitFunc() {
 
 
 int main(int argc, char *argv[]) {
-    dpCreate(argc, argv, WIDTH, HEIGHT, 1.0, 60);
+    dpCreate(argc, argv, WIDTH, HEIGHT, 60);
 
     dpSetUpdateFunc(&updateFunc);
     dpSetExitFunc(&exitFunc);
