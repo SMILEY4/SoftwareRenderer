@@ -54,6 +54,25 @@ void keyPressedFunc(unsigned char key, int x, int y) {
     if(key == 'l') { l = true; nKeysDown++; }
     if(key == 'u') { u = true; nKeysDown++; }
     if(key == 'o') { o = true; nKeysDown++; }
+
+
+    if(key == 'i') {
+        pixel_t *pixel = bmGetPixelAt(dpGetBuffer(), x, y);
+        if(pixel) {
+
+            printf("==============\n");
+            printf("PIXEL AT %d %d\n", x, y);
+            printf("Color:\n");
+            printf("  r:%f\n", pixel->color.r);
+            printf("  g:%f\n", pixel->color.g);
+            printf("  b:%f\n", pixel->color.b);
+            printf("  a:%f\n", pixel->color.a);
+            printf("depth:%f\n", pixel->depth);
+            printf("==============\n");
+
+        }
+    }
+
 }
 
 
@@ -62,7 +81,7 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 void create() {
     obj_model_t objmodel;
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
-    mdlCreateFromObj(&objmodel, &model);
+    mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png");
     objFree(&objmodel);
 
     srInit(WIDTH, HEIGHT);

@@ -93,7 +93,7 @@ void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, f
     glutDisplayFunc(displayFunc);
     glutIgnoreKeyRepeat(1);
     deltaTime = (float)(1000.0 / fps);
-    clearColor = (color_t){1, 0, 0, 1};
+    clearColor = (color_t){0, 0, 0, 0};
     bmCreate(&displayBufferFull, width, height);
     bmCreate(&displayBufferLow, width/lowResScale, height/lowResScale);
     displayBufferCurrent = &displayBufferFull;
@@ -144,6 +144,13 @@ void dpUseFullRes() {
 
 int dpIsUsingLowRes() {
     return useLowResBuffer;
+}
+
+
+
+
+bitmap_t *dpGetBuffer() {
+    return &displayBufferFull;
 }
 
 

@@ -4,8 +4,7 @@
 
 #include "objfile.h"
 #include "geometry.h"
-
-
+#include "bitmap.h"
 
 
 typedef struct {
@@ -21,12 +20,13 @@ typedef struct {
 typedef struct {
     triangle_t *triangles;
     int nTriangles;
+    bitmap_t texture;
 } model_t;
 
 
 
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model);
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture);
 
 void mdlFreeModel(model_t *model);
 

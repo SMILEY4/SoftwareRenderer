@@ -21,6 +21,8 @@ void dpUseFullRes();
 
 int dpIsUsingLowRes();
 
+bitmap_t *dpGetBuffer();
+
 void dpSetKeyPressedFunc( void (*f)(unsigned char key, int x, int y) );
 
 void dpSetKeyReleasedFunc( void (*f)(unsigned char key, int x, int y) );

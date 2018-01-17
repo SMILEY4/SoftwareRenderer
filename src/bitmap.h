@@ -12,6 +12,7 @@ typedef struct {
 
 typedef struct {
     color_t color;
+    double depth;
 } pixel_t;
 
 

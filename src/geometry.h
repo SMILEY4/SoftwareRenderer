@@ -34,6 +34,8 @@ double vecDot(vec_t *a, vec_t *b);
 
 void vecCross(vec_t *dst, vec_t *a, vec_t *b);
 
+double vecCross2D(vec_t *a, vec_t *b);
+
 double vecLength(vec_t *v);
 
 double vecDist(vec_t *a, vec_t *b);

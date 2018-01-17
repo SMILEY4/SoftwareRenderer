@@ -48,6 +48,7 @@ void bmClear(bitmap_t *bitmap, color_t *color) {
             pixel->color.g = color->g;
             pixel->color.b = color->b;
             pixel->color.a = color->a;
+            pixel->depth = 0.0;
         }
     }
 }

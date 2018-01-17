@@ -9,9 +9,11 @@
 camera_t srCamera;
 
 
-void srInit(float width, float height);
+void srRender(bitmap_t *bitmap, model_t *model);
 
 void srRenderWireframe(bitmap_t *bitmap, model_t *model);
+
+void srInit(float width, float height);
 
 
 #endif

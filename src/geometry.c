@@ -51,6 +51,13 @@ void vecCross(vec_t *dst, vec_t *a, vec_t *b) {
 
 
 
+double vecCross2D(vec_t *a, vec_t *b) {
+    return a->x * b->y - a->y * b->x;
+}
+
+
+
+
 double vecLength(vec_t *v) {
     double len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
     return sqrt(len2);

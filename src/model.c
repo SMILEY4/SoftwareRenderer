@@ -1,11 +1,11 @@
 #include "model.h"
 #include "objfile.h"
-
+#include "bitmap.h"
 #include <windows.h>
 
 
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model) {
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture) {
     if(!objmodel) {
         return;
     }
@@ -50,6 +50,13 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model) {
 
         model->triangles[i] = triangle;
 
+    }
+
+    // load texture
+    if(fileTexture) {
+        bitmap_t texture;
+        bmCreateFromPNG(&texture, fileTexture);
+        model->texture = texture;
     }
 
 }
