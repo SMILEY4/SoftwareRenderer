@@ -4,8 +4,10 @@
 #include "bresenham.h"
 #include "camera.h"
 #include "geometry.h"
+#include "stopwatch.h"
 #include <math.h>
 #include <stdio.h>
+#include <windows.h>
 
 #define toRadians(angleDegrees) ((angleDegrees) * M_PI / 180.0)
 #define toDegrees(angleRadians) ((angleRadians) * 180.0 / M_PI
@@ -164,6 +166,8 @@ void srRender(bitmap_t *bitmap, model_t *model) {
 
     // render model
     for(int i=0; i<model->nTriangles; i++) {
+        watchStart("triangle");
+
         triangle_t *triangle = model->triangles + i;
 
         // transform vertices
@@ -177,6 +181,7 @@ void srRender(bitmap_t *bitmap, model_t *model) {
         // draw triangle
         drawTriangle(bitmap, model, triangle, p);
 
+        watchEnd("triangle");
     }
 }
 

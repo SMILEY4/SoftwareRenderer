@@ -1,5 +1,6 @@
 #include "bitmap.h"
 #include "display.h"
+#include "stopwatch.h"
 #include <windows.h>
 #include <GL/glut.h>
 #include <time.h>
@@ -43,11 +44,15 @@ float toGLCoords(float x, float size, bool flip) {
 
 void displayFunc() {
 
+    watchReset();
+
     clock_t start, end;
     start = clock();
 
     bmClear(displayBufferCurrent, &clearColor);
     (*updateFunction)(displayBufferCurrent);
+
+    watchStart("openGL");
 
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize( (useLowResBuffer ? lowResScale : 1) );
@@ -66,6 +71,10 @@ void displayFunc() {
 
     glEnd();
     glutSwapBuffers();
+
+    watchEnd("openGL");
+
+    watchPrintData();
 
     end = clock();
     float dtms = (float)(end - start);

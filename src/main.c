@@ -4,6 +4,7 @@
 #include "model.h"
 #include "renderer.h"
 #include "camera.h"
+#include "stopwatch.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -101,7 +102,12 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(q) { camMove(&srCamera, 2,  camSpeed); }
     if(e) { camMove(&srCamera, 2, -camSpeed); }
 
+    watchStart("rendering");
+
     srRender(displayBuffer, &model);
+
+    watchEnd("rendering");
+
 
     if(nKeysDown == 0) {
         if(dpIsUsingLowRes() == 1) {
@@ -119,6 +125,7 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 void exitFunc() {
     dpDispose();
+    watchFreeData();
 }
 
 
