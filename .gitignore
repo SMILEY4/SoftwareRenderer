@@ -1,6 +1,7 @@
 .idea/
 cmake-build-debug/
 CMakeLists.txt
+watchdata_log.txt
 
 # Prerequisites
 *.d

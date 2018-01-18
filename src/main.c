@@ -85,6 +85,11 @@ void create() {
     mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png");
     objFree(&objmodel);
 
+    model.translation = (vec_t){ 0,   0,  0, 0};
+    model.rotation =    (vec_t){ 0,   1,  0, 0};
+    model.scale =       (vec_t){10, -10, 10, 0};
+    mdlUpdateTransform(&model);
+
     srInit(WIDTH, HEIGHT);
 
 }

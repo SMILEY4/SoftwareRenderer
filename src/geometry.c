@@ -7,14 +7,14 @@
 
 
 
-vec_t vecCreate(double x, double y, double z, double w) {
+vec_t vecCreate(float x, float y, float z, float w) {
     return (vec_t){x, y, z, w};
 }
 
 
 
 
-void vecSet(vec_t *dst, double x, double y, double z, double w) {
+void vecSet(vec_t *dst, float x, float y, float z, float w) {
     dst->x = x;
     dst->y = y;
     dst->z = z;
@@ -34,7 +34,7 @@ void vecCopy(vec_t *dst, vec_t *src) {
 
 
 
-double vecDot(vec_t *a, vec_t *b) {
+float vecDot(vec_t *a, vec_t *b) {
     return a->x*b->x + a->y*b->y + a->z*b->z - a->w*b->w;
 }
 
@@ -51,22 +51,22 @@ void vecCross(vec_t *dst, vec_t *a, vec_t *b) {
 
 
 
-double vecCross2D(vec_t *a, vec_t *b) {
+float vecCross2D(vec_t *a, vec_t *b) {
     return a->x * b->y - a->y * b->x;
 }
 
 
 
 
-double vecLength(vec_t *v) {
-    double len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
+float vecLength(vec_t *v) {
+    float len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
     return sqrt(len2);
 }
 
 
 
 
-double vecDist(vec_t *a, vec_t *b) {
+float vecDist(vec_t *a, vec_t *b) {
     static vec_t tmp;
     vecSub(&tmp, a, b);
     return vecLength(&tmp);
@@ -76,7 +76,7 @@ double vecDist(vec_t *a, vec_t *b) {
 
 
 void vecNormalize(vec_t *dst, vec_t *src) {
-    const double len = vecLength(src);
+    const float len = vecLength(src);
     if(len <= 0) {
         return;
     }
@@ -116,7 +116,7 @@ void vecMul(vec_t *dst, vec_t *a, vec_t *b) {
 
 
 
-void vecScale(vec_t *dst, vec_t *vec, double s) {
+void vecScale(vec_t *dst, vec_t *vec, float s) {
     dst->x = vec->x * s;
     dst->y = vec->y * s;
     dst->z = vec->z * s;
@@ -125,9 +125,9 @@ void vecScale(vec_t *dst, vec_t *vec, double s) {
 
 
 
-void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, double angle) {
-    double sinAngle = sin(-angle);
-    double cosAngle = cos(-angle);
+void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
+    float sinAngle = sin(-angle);
+    float cosAngle = cos(-angle);
 
     vec_t v0, v1;
     vecScale(&v0, axis, sinAngle);
@@ -187,7 +187,7 @@ void matSetIdentity(matrix_t *mat) {
 
 
 
-void matSetScreenSpaceTransform(matrix_t *mat, double halfWidth, double halfHeight) {
+void matSetScreenSpaceTransform(matrix_t *mat, float halfWidth, float halfHeight) {
     mat->m[0][0] = halfWidth;           mat->m[0][1] = 0;                   mat->m[0][2] = 0;                   mat->m[0][3] = halfWidth;
     mat->m[1][0] = 0;                   mat->m[1][1] = -halfHeight;         mat->m[1][2] = 0;                   mat->m[1][3] = halfHeight;
     mat->m[2][0] = 0;                   mat->m[2][1] = 0;                   mat->m[2][2] = 1;                   mat->m[2][3] = 0;
@@ -197,7 +197,7 @@ void matSetScreenSpaceTransform(matrix_t *mat, double halfWidth, double halfHeig
 
 
 
-void matSetTranslation(matrix_t *mat, double x, double y, double z) {
+void matSetTranslation(matrix_t *mat, float x, float y, float z) {
     matSetIdentity(mat);
     mat->m[0][3] = x;
     mat->m[1][3] = y;
@@ -207,9 +207,9 @@ void matSetTranslation(matrix_t *mat, double x, double y, double z) {
 
 
 
-void matSetRotationAngle(matrix_t *mat, double x, double y, double z, double angle) {
-    double s = sin(angle);
-    double c = cos(angle);
+void matSetRotationAngle(matrix_t *mat, float x, float y, float z, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
     mat->m[0][0] = c+x*x*(1-c);         mat->m[0][1] = x*y*(1-c)-z*s;        mat->m[0][2] = x*z*(1-c)+y*s;      mat->m[0][3] = 0;
     mat->m[1][0] = y*x*(1-c)+z*s;       mat->m[1][1] = c+y*y*(1-c);          mat->m[1][2] = y*z*(1-c)-x*s;      mat->m[1][3] = 0;
     mat->m[2][0] = z*x*(1-c)-y*s;       mat->m[2][1] = z*y*(1-c)+x*s;        mat->m[2][2] = c+z*z*(1-c);        mat->m[2][3] = 0;
@@ -219,7 +219,7 @@ void matSetRotationAngle(matrix_t *mat, double x, double y, double z, double ang
 
 
 
-void matSetRotation(matrix_t *mat, double x, double y, double z) {
+void matSetRotation(matrix_t *mat, float x, float y, float z) {
 
     matrix_t rx, ry, rz;
 
@@ -277,7 +277,7 @@ void matSetRotationFU(matrix_t *mat, vec_t *forward, vec_t *up) {
 
 
 
-void matSetScale(matrix_t *mat, double x, double y, double z) {
+void matSetScale(matrix_t *mat, float x, float y, float z) {
     matSetIdentity(mat);
     mat->m[0][0] = x;
     mat->m[1][1] = y;
@@ -287,9 +287,9 @@ void matSetScale(matrix_t *mat, double x, double y, double z) {
 
 
 
-void matSetPerspective(matrix_t *mat, double fov, double aspectRatio, double zNear, double zFar) {
-    double tanHalfFOV = tan(fov/2.0);
-    double zRange = zNear - zFar;
+void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
+    float tanHalfFOV = tan(fov/2.0);
+    float zRange = zNear - zFar;
     mat->m[0][0] = 1.0/(tanHalfFOV*aspectRatio); mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
     mat->m[1][0] = 0;                            mat->m[1][1] = 1.0f/tanHalfFOV;              mat->m[1][2] = 0;                            mat->m[1][3] = 0;
     mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = (-zNear -zFar)/zRange;        mat->m[2][3] = 2 * zFar * zNear / zRange;
@@ -345,10 +345,10 @@ void matMul3(matrix_t *dst, matrix_t *left, matrix_t *center, matrix_t *right) {
 
 
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat) {
-    double rx = mat->m[0][0] * vec->x + mat->m[0][1] * vec->y + mat->m[0][2] * vec->z + mat->m[0][3] * vec->w;
-    double ry = mat->m[1][0] * vec->x + mat->m[1][1] * vec->y + mat->m[1][2] * vec->z + mat->m[1][3] * vec->w;
-    double rz = mat->m[2][0] * vec->x + mat->m[2][1] * vec->y + mat->m[2][2] * vec->z + mat->m[2][3] * vec->w;
-    double rw = mat->m[3][0] * vec->x + mat->m[3][1] * vec->y + mat->m[3][2] * vec->z + mat->m[3][3] * vec->w;
+    float rx = mat->m[0][0] * vec->x + mat->m[0][1] * vec->y + mat->m[0][2] * vec->z + mat->m[0][3] * vec->w;
+    float ry = mat->m[1][0] * vec->x + mat->m[1][1] * vec->y + mat->m[1][2] * vec->z + mat->m[1][3] * vec->w;
+    float rz = mat->m[2][0] * vec->x + mat->m[2][1] * vec->y + mat->m[2][2] * vec->z + mat->m[2][3] * vec->w;
+    float rw = mat->m[3][0] * vec->x + mat->m[3][1] * vec->y + mat->m[3][2] * vec->z + mat->m[3][3] * vec->w;
     dst->x = rx;
     dst->y = ry;
     dst->z = rz;

@@ -6,15 +6,15 @@
 
 
 typedef struct {
-    double x;
-    double y;
-    double z;
-    double w;
+    float x;
+    float y;
+    float z;
+    float w;
 } vec_t;
 
 
 typedef struct {
-    double m[4][4];
+    float m[4][4];
 } matrix_t;
 
 
@@ -24,21 +24,21 @@ typedef struct {
 
 void vecPrint(vec_t *v, char *name);
 
-vec_t vecCreate(double x, double y, double z, double w);
+vec_t vecCreate(float x, float y, float z, float w);
 
-void vecSet(vec_t *dst, double x, double y, double z, double w);
+void vecSet(vec_t *dst, float x, float y, float z, float w);
 
 void vecCopy(vec_t *dst, vec_t *src);
 
-double vecDot(vec_t *a, vec_t *b);
+float vecDot(vec_t *a, vec_t *b);
 
 void vecCross(vec_t *dst, vec_t *a, vec_t *b);
 
-double vecCross2D(vec_t *a, vec_t *b);
+float vecCross2D(vec_t *a, vec_t *b);
 
-double vecLength(vec_t *v);
+float vecLength(vec_t *v);
 
-double vecDist(vec_t *a, vec_t *b);
+float vecDist(vec_t *a, vec_t *b);
 
 void vecNormalize(vec_t *dst, vec_t *src);
 
@@ -48,9 +48,9 @@ void vecAdd(vec_t *dst, vec_t *a, vec_t *b);
 
 void vecMul(vec_t *dst, vec_t *a, vec_t *b);
 
-void vecScale(vec_t *dst, vec_t *vec, double s);
+void vecScale(vec_t *dst, vec_t *vec, float s);
 
-void vecRotate(vec_t *dst, vec_t * vec, vec_t *axis, double angle);
+void vecRotate(vec_t *dst, vec_t * vec, vec_t *axis, float angle);
 
 void vecPerspectiveDivide(vec_t *dst, vec_t *src);
 
@@ -63,21 +63,21 @@ void matPrint(matrix_t *t, char *name);
 
 void matSetIdentity(matrix_t *mat);
 
-void matSetScreenSpaceTransform(matrix_t *mat, double halfWidth, double halfHeight);
+void matSetScreenSpaceTransform(matrix_t *mat, float halfWidth, float halfHeight);
 
-void matSetTranslation(matrix_t *mat, double x, double y, double z);
+void matSetTranslation(matrix_t *mat, float x, float y, float z);
 
-void matSetRotationAngle(matrix_t *mat, double x, double y, double z, double angle);
+void matSetRotationAngle(matrix_t *mat, float x, float y, float z, float angle);
 
-void matSetRotation(matrix_t *mat, double x, double y, double z);
+void matSetRotation(matrix_t *mat, float x, float y, float z);
 
 void matSetRotationFUR(matrix_t *mat, vec_t *forward, vec_t *up, vec_t *right);
 
 void matSetRotationFU(matrix_t *mat, vec_t *forward, vec_t *up);
 
-void matSetScale(matrix_t *mat, double x, double y, double z);
+void matSetScale(matrix_t *mat, float x, float y, float z);
 
-void matSetPerspective(matrix_t *mat, double fov, double aspectRatio, double zNear, double zFar);
+void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar);
 
 void matSetOrthographic(matrix_t *mat, float left, float right, float bottom, float top, float near, float far);
 

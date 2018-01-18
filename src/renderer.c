@@ -16,19 +16,13 @@
 
 
 void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
-
     vec_t V1, V2, Q;
     vecSub(&V1, B, A);
     vecSub(&V2, C, A);
     vecSub(&Q , P, A);
-
-    double s = vecCross2D(&Q, &V2) / vecCross2D(&V1, &V2);
-    double t = vecCross2D(&V1, &Q) / vecCross2D(&V1, &V2);
-    double u = 1.0 - s - t;
-
-    dst->x = u;
-    dst->y = s;
-    dst->z = t;
+    dst->y = vecCross2D(&Q, &V2) / vecCross2D(&V1, &V2);
+    dst->z = vecCross2D(&V1, &Q) / vecCross2D(&V1, &V2);
+    dst->x = 1.0 - dst->y -  dst->z;
 }
 
 
@@ -41,7 +35,7 @@ int cullBackface(vec_t A, vec_t B, vec_t C) {
     vecSub(&triAC, &C, &A);
     vecCross(&triNormal, &triAB, &triAC);
     vecNormalize(&triNormal, &triNormal);
-    double d = vecDot(&triNormal, &(vec_t){0, 0, 1});
+    float d = vecDot(&triNormal, &(vec_t){0, 0, 1});
     if(d < 0) {
         return 1;
     } else {
@@ -68,11 +62,10 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
         return;
     }
 
-
-    double minX = bitmap->width-1;
-    double minY = bitmap->height-1;
-    double maxX = 0;
-    double maxY = 0;
+    float minX = bitmap->width-1;
+    float minY = bitmap->height-1;
+    float maxX = 0;
+    float maxY = 0;
 
     for(int i=0; i<3; i++) {
         vec_t v = vertices[i];
@@ -84,18 +77,11 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
         if(v.y > maxY) { maxY = v.y; }
     }
 
+    unsigned int pixelsHit = 0;
+    unsigned int pixelsMiss;
+
     for (int x = (int) floor(minX); x <= (int) ceil(maxX); x++) {
         for (int y = (int) floor(minY); y <= (int) ceil(maxY); y++) {
-
-            // get pixel and do first depth-test
-            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            if(!pixel) {
-                continue;
-            } else {
-                if(vertices[0].z < pixel->depth && vertices[1].z < pixel->depth && vertices[2].z < pixel->depth) {
-                    continue;
-                }
-            }
 
             // get texel and barycentric coordinates
             vec_t texelCoords = {x+0.5, y+0.5, 0};
@@ -105,7 +91,12 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
             // test if sample is part of triangle
             if(baryCoords.x < 0 || baryCoords.y < 0 || baryCoords.z < 0) {
                 continue;
+                pixelsMiss += 1;
             }
+            pixelsHit += 1;
+
+
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
 
             // get pixel depth
             vec_t pxDepth;
@@ -139,6 +130,8 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
         }
     }
 
+    printf("pixel stats: total: %d,  hit: %d,  miss: %d,   percHit: %f \n", pixelsHit+pixelsMiss, pixelsHit, pixelsMiss, (float)pixelsHit / (float)(pixelsHit+pixelsMiss));
+
 }
 
 
@@ -149,12 +142,7 @@ void srRender(bitmap_t *bitmap, model_t *model) {
     matrix_t viewProjection = srCamera.viewProjection;
 
     // create model transform
-    static float rotCounter; rotCounter = 1.0;
-    matrix_t translation, rotation, scale, modelTransform;
-    matSetTranslation(&translation, 0, 0, 0);
-    matSetRotation(&rotation, 0, rotCounter, 0);
-    matSetScale(&scale, 10, -10, 10);
-    matMul3(&modelTransform, &translation, &rotation, &scale);
+    matrix_t modelTransform = model->modelTransform;
 
     // create model view projection
     matrix_t mvp;
@@ -164,22 +152,31 @@ void srRender(bitmap_t *bitmap, model_t *model) {
     matrix_t screenSpaceTransform;
     matSetScreenSpaceTransform(&screenSpaceTransform, bitmap->width/2, bitmap->height/2);
 
+
     // render model
-    for(int i=0; i<model->nTriangles; i++) {
+    //for(int i=0; i<model->nTriangles; i++) {
+    for(int i=model->nTriangles; i>0; i--) {
+
         watchStart("triangle");
 
-        triangle_t *triangle = model->triangles + i;
+        triangle_t *triangle = model->triangles + (i-1);
 
         // transform vertices
+        watchStart("tran_triangle");
         vec_t p[3];
         for(int j=0; j<3; j++) {
             matTransform(&p[j], &triangle->vertices[j].pos, &mvp);
             matTransform(&p[j], &p[j], &screenSpaceTransform);
             vecPerspectiveDivide(&p[j], &p[j]);
         }
+        watchEnd("tran_triangle");
+
 
         // draw triangle
+        watchStart("draw_triangle");
         drawTriangle(bitmap, model, triangle, p);
+        watchEnd("draw_triangle");
+
 
         watchEnd("triangle");
     }

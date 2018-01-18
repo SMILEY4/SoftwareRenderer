@@ -12,6 +12,7 @@ typedef struct {
     matrix_t view;
     matrix_t projection;
     matrix_t viewProjection;
+    matrix_t screenSpaceTransform;
 } camera_t;
 
 

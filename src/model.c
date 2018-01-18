@@ -5,6 +5,16 @@
 
 
 
+void mdlUpdateTransform(model_t *model) {
+    matSetTranslation(&model->matTranslation, model->translation.x, model->translation.y, model->translation.z);
+    matSetRotation(&model->matRotation, model->rotation.x, model->rotation.y, model->rotation.z);
+    matSetScale(&model->matScale, model->scale.x, model->scale.y, model->scale.z);
+    matMul3(&model->modelTransform, &model->matTranslation, &model->matRotation, &model->matScale);
+}
+
+
+
+
 void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture) {
     if(!objmodel) {
         return;
@@ -59,6 +69,7 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture) 
         model->texture = texture;
     }
 
+    mdlUpdateTransform(model);
 }
 
 
