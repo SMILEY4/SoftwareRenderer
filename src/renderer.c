@@ -28,6 +28,17 @@ void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
 
 
 
+int isInVisibleArea(float width, float height, vec_t *A, vec_t *B, vec_t *C) {
+    int visible = 0;
+    if( (0 <= A->x && A->x < width) && (0 <= A->y && A->y < height) ) { visible = 1; }
+    if( (0 <= B->x && B->x < width) && (0 <= B->y && B->y < height) ) { visible = 1; }
+    if( (0 <= C->x && C->x < width) && (0 <= C->y && C->y < height) ) { visible = 1; }
+    return visible;
+}
+
+
+
+
 int cullBackface(vec_t A, vec_t B, vec_t C) {
     vec_t triNormal;
     vec_t triAB, triAC;
@@ -105,6 +116,9 @@ void processPixel(bitmap_t *bitmap, int x, int y, model_t *model, triangle_t *tr
 
 void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t vertices[3]) {
 
+    if(isInVisibleArea(bitmap->width, bitmap->height, &vertices[0], &vertices[1], &vertices[2]) == 0) {
+        return;
+    }
     if(cullBackface(vertices[0], vertices[1], vertices[2]) == 1) {
         return;
     }
