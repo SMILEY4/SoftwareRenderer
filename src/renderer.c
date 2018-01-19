@@ -136,7 +136,7 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
     maxY = fminf(maxY, bitmap->height-1);
     minY = fmaxf(minY, 0);
 
-    for(int i=minY; i<=maxY; i++) {
+    for(int i=(int)floorf(minY); i<=(int)ceilf(maxY); i++) {
         bitmap->scanbufferMin[i] = bitmap->width+100;
         bitmap->scanbufferMax[i] = -(bitmap->width+100);
 
@@ -146,7 +146,8 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
     bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[2].x, (int)vertices[2].y);
     bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[1].x, (int)vertices[1].y, (int)vertices[2].x, (int)vertices[2].y);
 
-    for(int y=(int)floorf(minY)-1; y<=ceilf(maxY)+1; y++) {
+
+    for(int y=(int)floorf(minY); y<=(int)ceilf(maxY); y++) {
 
         int startX = bitmap->scanbufferMin[y]-1;
         int endX   = bitmap->scanbufferMax[y]+1;
@@ -168,7 +169,6 @@ void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t 
 
         }
     }
-
 
 }
 
