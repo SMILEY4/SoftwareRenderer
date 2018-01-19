@@ -24,7 +24,8 @@ int useLowResBuffer = 0;
 
 void (*updateFunction)(bitmap_t *bitmap);
 
-
+float *posArrayFull;
+float *posArrayLow;
 
 
 void timerFunc(int value) {
@@ -44,7 +45,7 @@ float toGLCoords(float x, float size, bool flip) {
 
 void displayFunc() {
 
-    watchReset();
+    //watchReset();
 
     clock_t start, end;
     start = clock();
@@ -54,8 +55,38 @@ void displayFunc() {
 
     watchStart("openGL");
 
+
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    watchStart("prepOpenGL");
+
+    if(useLowResBuffer == 1) {
+        glPointSize(lowResScale);
+        glVertexPointer(2, GL_FLOAT, 0, posArrayLow);
+        glColorPointer(3, GL_FLOAT, sizeof(pixel_t), &(displayBufferCurrent->pixels->color.r));
+        glDrawArrays(GL_POINTS, 0, displayBufferLow.width*displayBufferLow.height);
+
+    } else {
+        glPointSize(1);
+        glVertexPointer(2, GL_FLOAT, 0, posArrayFull);
+        glColorPointer(3, GL_FLOAT, sizeof(pixel_t), &(displayBufferCurrent->pixels->color.r));
+        glDrawArrays(GL_POINTS, 0, displayBufferFull.width*displayBufferFull.height);
+    }
+
+    watchEnd("prepOpenGL");
+
+
+
+
+    /*
+
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize( (useLowResBuffer ? lowResScale : 1) );
+
     glBegin(GL_POINTS);
 
     for(int y=0; y<displayBufferCurrent->height; y++) {
@@ -70,6 +101,8 @@ void displayFunc() {
     }
 
     glEnd();
+*/
+
     glutSwapBuffers();
 
     watchEnd("openGL");
@@ -104,8 +137,33 @@ void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, f
     deltaTime = (float)(1000.0 / fps);
     clearColor = (color_t){0, 0, 0, 0};
     bmCreate(&displayBufferFull, width, height);
-    bmCreate(&displayBufferLow, width/lowResScale, height/lowResScale);
+    bmCreate(&displayBufferLow, (unsigned int)(width/lowResScale), (unsigned int)(height/lowResScale));
     displayBufferCurrent = &displayBufferFull;
+    posArrayFull = calloc(displayBufferFull.width*displayBufferFull.height*2, sizeof(float));
+    posArrayLow = calloc(displayBufferLow.width*displayBufferLow.height*2, sizeof(float));
+
+    int iF=0;
+    for(int y=0; y<displayBufferFull.height; y++) {
+        for(int x=0; x<displayBufferFull.width; x++) {
+
+            float glX = toGLCoords(x, displayBufferFull.width,  false);
+            float glY = toGLCoords(y, displayBufferFull.height, true);
+
+            posArrayFull[iF++] = glX;
+            posArrayFull[iF++] = glY;
+        }
+    }
+
+    int iL=0;
+    for(int y=0; y<displayBufferLow.height; y++) {
+        for(int x=0; x<displayBufferLow.width; x++) {
+            float glX = toGLCoords(x, displayBufferLow.width,  false);
+            float glY = toGLCoords(y, displayBufferLow.height, true);
+            posArrayLow[iL++] = glX;
+            posArrayLow[iL++] = glY;
+        }
+    }
+
 }
 
 
@@ -114,6 +172,8 @@ void dpCreate(int argc, char *argv[], unsigned int width, unsigned int height, f
 void dpDispose() {
     bmDispose(&displayBufferFull);
     bmDispose(&displayBufferLow);
+    free(posArrayFull);
+    free(posArrayLow);
 }
 
 
