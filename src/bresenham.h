@@ -2,6 +2,9 @@
 #define SOFTWARERENDERER_BRESENHAM_H
 
 #include "bitmap.h"
+#include "geometry.h"
+
+void bhDrawLineToScanbuffer(int *scanbufferMin, int *scanbufferMax, int scanbufferSize, int ax, int ay, int bx, int by);
 
 void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color);
 

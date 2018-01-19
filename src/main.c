@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include "camera.h"
 #include "stopwatch.h"
+#include "bresenham.h"
 
 #include <stdbool.h>
 #include <stdio.h>

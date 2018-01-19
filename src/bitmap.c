@@ -60,6 +60,8 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     bitmap->pixels = calloc(width*height, sizeof(pixel_t));
     bitmap->width = width;
     bitmap->height = height;
+    bitmap->scanbufferMin = calloc(height, sizeof(int));
+    bitmap->scanbufferMax = calloc(height, sizeof(int));
 }
 
 
@@ -110,5 +112,7 @@ void bmDispose(bitmap_t *bitmap) {
     if(bitmap->pixels) {
         free(bitmap->pixels);
         bitmap->pixels = NULL;
+        free(bitmap->scanbufferMin);
+        free(bitmap->scanbufferMax);
     }
 }

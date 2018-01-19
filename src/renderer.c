@@ -22,7 +22,7 @@ void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
     vecSub(&Q , P, A);
     dst->y = vecCross2D(&Q, &V2) / vecCross2D(&V1, &V2);
     dst->z = vecCross2D(&V1, &Q) / vecCross2D(&V1, &V2);
-    dst->x = 1.0 - dst->y -  dst->z;
+    dst->x = 1.0f - dst->y -  dst->z;
 }
 
 
@@ -56,81 +56,105 @@ void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords
 
 
 
+void processPixel(bitmap_t *bitmap, int x, int y, model_t *model, triangle_t *triangle, vec_t vertices[3]) {
+
+    pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+    if(!pixel) {
+        return;
+    }
+
+    // get texel and barycentric coordinates
+    vec_t texelCoords = {x+0.5, y+0.5, 0};
+    vec_t baryCoords;
+    barycentric(&baryCoords, &vertices[0], &vertices[1], &vertices[2], &texelCoords);
+
+    // get pixel depth
+    vec_t pxDepth;
+    interpolateBary(&pxDepth, &vertices[0], &vertices[1], &vertices[2], &baryCoords);
+
+    // depth test
+    if(pxDepth.z < pixel->depth) {
+        return;
+    }
+
+    // texCoord of pixel
+    vec_t pxUV;
+    interpolateBary(&pxUV, &triangle->vertices[0].texcoord, &triangle->vertices[1].texcoord, &triangle->vertices[2].texcoord, &baryCoords);
+
+    // get diffuse color
+    pixel_t *texDiff = bmGetPixelAt(&model->texture, (int)(pxUV.x*model->texture.width), (int)((1.0-pxUV.y)*model->texture.height));
+
+    // draw pixel
+    if(texDiff) {
+        pixel->color.r = texDiff->color.r;
+        pixel->color.g = texDiff->color.g;
+        pixel->color.b = texDiff->color.b;
+    } else {
+        pixel->color.r = (float)(pxUV.x);
+        pixel->color.g = (float)(pxUV.y);
+        pixel->color.b = (float)(pxUV.z);
+    }
+    pixel->color.a = 1.0;
+    pixel->depth = vertices[0].z;
+
+
+}
+
+
+
+
 void drawTriangle(bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t vertices[3]) {
 
     if(cullBackface(vertices[0], vertices[1], vertices[2]) == 1) {
         return;
     }
 
-    float minX = bitmap->width-1;
-    float minY = bitmap->height-1;
-    float maxX = 0;
-    float maxY = 0;
+    float minY = vertices[0].y;
+    minY = fminf(minY, vertices[1].y);
+    minY = fminf(minY, vertices[2].y);
+    minY = fminf(minY, bitmap->height-1);
+    minY = fmaxf(minY, 0);
 
-    for(int i=0; i<3; i++) {
-        vec_t v = vertices[i];
-        v.z = 0.0;
-        v.w = 0.0;
-        if(v.x < minX) { minX = v.x; }
-        if(v.y < minY) { minY = v.y; }
-        if(v.x > maxX) { maxX = v.x; }
-        if(v.y > maxY) { maxY = v.y; }
+
+    float maxY = vertices[0].y;
+    maxY = fmaxf(maxY, vertices[1].y);
+    maxY = fmaxf(maxY, vertices[2].y);
+    maxY = fminf(maxY, bitmap->height-1);
+    minY = fmaxf(minY, 0);
+
+    for(int i=minY; i<=maxY; i++) {
+        bitmap->scanbufferMin[i] = bitmap->width+100;
+        bitmap->scanbufferMax[i] = -(bitmap->width+100);
+
     }
 
-    unsigned int pixelsHit = 0;
-    unsigned int pixelsMiss;
+    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[1].x, (int)vertices[1].y);
+    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[2].x, (int)vertices[2].y);
+    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[1].x, (int)vertices[1].y, (int)vertices[2].x, (int)vertices[2].y);
 
-    for (int x = (int) floor(minX); x <= (int) ceil(maxX); x++) {
-        for (int y = (int) floor(minY); y <= (int) ceil(maxY); y++) {
+    for(int y=(int)floorf(minY)-1; y<=ceilf(maxY)+1; y++) {
+
+        int startX = bitmap->scanbufferMin[y]-1;
+        int endX   = bitmap->scanbufferMax[y]+1;
+
+        for(int x=startX; x<=endX; x++) {
 
             // get texel and barycentric coordinates
-            vec_t texelCoords = {x+0.5, y+0.5, 0};
+            vec_t texelCoords = {x+0.5f, y+0.5f, 0};
             vec_t baryCoords;
             barycentric(&baryCoords, &vertices[0], &vertices[1], &vertices[2], &texelCoords);
 
             // test if sample is part of triangle
             if(baryCoords.x < 0 || baryCoords.y < 0 || baryCoords.z < 0) {
                 continue;
-                pixelsMiss += 1;
             }
-            pixelsHit += 1;
-
-
-            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-
-            // get pixel depth
-            vec_t pxDepth;
-            interpolateBary(&pxDepth, &vertices[0], &vertices[1], &vertices[2], &baryCoords);
-
-            // second depth test
-            if(pxDepth.z < pixel->depth) {
-                continue;
-            }
-
-            // texCoord of pixel
-            vec_t pxUV;
-            interpolateBary(&pxUV, &triangle->vertices[0].texcoord, &triangle->vertices[1].texcoord, &triangle->vertices[2].texcoord, &baryCoords);
-
-            // get diffuse color
-            pixel_t *texDiff = bmGetPixelAt(&model->texture, (int)(pxUV.x*model->texture.width), (int)((1.0-pxUV.y)*model->texture.height));
 
             // draw pixel
-            if(texDiff) {
-                pixel->color.r = texDiff->color.r;
-                pixel->color.g = texDiff->color.g;
-                pixel->color.b = texDiff->color.b;
-            } else {
-                pixel->color.r = (float)(pxUV.x);
-                pixel->color.g = (float)(pxUV.y);
-                pixel->color.b = (float)(pxUV.z);
-            }
-            pixel->color.a = 1.0;
-            pixel->depth = vertices[0].z;
+            processPixel(bitmap, x, y, model, triangle, vertices);
 
         }
     }
 
-    printf("pixel stats: total: %d,  hit: %d,  miss: %d,   percHit: %f \n", pixelsHit+pixelsMiss, pixelsHit, pixelsMiss, (float)pixelsHit / (float)(pixelsHit+pixelsMiss));
 
 }
 
@@ -180,6 +204,7 @@ void srRender(bitmap_t *bitmap, model_t *model) {
 
         watchEnd("triangle");
     }
+
 }
 
 

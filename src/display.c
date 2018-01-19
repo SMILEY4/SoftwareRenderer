@@ -44,7 +44,7 @@ float toGLCoords(float x, float size, bool flip) {
 
 void displayFunc() {
 
-    //watchReset();
+    watchReset();
 
     clock_t start, end;
     start = clock();
@@ -74,7 +74,7 @@ void displayFunc() {
 
     watchEnd("openGL");
 
-   // watchPrintData();
+    watchPrintData();
 
     end = clock();
     float dtms = (float)(end - start);

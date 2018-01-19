@@ -20,6 +20,8 @@ typedef struct {
     pixel_t *pixels;
     unsigned int width;
     unsigned int height;
+    int *scanbufferMin;
+    int *scanbufferMax;
 } bitmap_t;
 
 
