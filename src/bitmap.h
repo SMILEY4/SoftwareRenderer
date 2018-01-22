@@ -12,7 +12,7 @@ typedef struct {
 
 typedef struct {
     color_t color;
-    double depth;
+    float depth;
 } pixel_t;
 
 

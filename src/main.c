@@ -132,6 +132,7 @@ void updateFunc(bitmap_t *displayBuffer) {
 void exitFunc() {
     dpDispose();
     watchFreeData();
+    mdlFreeModel(&model);
 }
 
 

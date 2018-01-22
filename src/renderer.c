@@ -75,7 +75,7 @@ void processPixel(bitmap_t *bitmap, int x, int y, model_t *model, triangle_t *tr
     }
 
     // get texel and barycentric coordinates
-    vec_t texelCoords = {x+0.5, y+0.5, 0};
+    vec_t texelCoords = {x+0.5f, y+0.5f, 0};
     vec_t baryCoords;
     barycentric(&baryCoords, &vertices[0], &vertices[1], &vertices[2], &texelCoords);
 
@@ -101,9 +101,9 @@ void processPixel(bitmap_t *bitmap, int x, int y, model_t *model, triangle_t *tr
         pixel->color.g = texDiff->color.g;
         pixel->color.b = texDiff->color.b;
     } else {
-        pixel->color.r = (float)(pxUV.x);
-        pixel->color.g = (float)(pxUV.y);
-        pixel->color.b = (float)(pxUV.z);
+        pixel->color.r = (pxUV.x);
+        pixel->color.g = (pxUV.y);
+        pixel->color.b = (pxUV.z);
     }
     pixel->color.a = 1.0;
     pixel->depth = vertices[0].z;
@@ -209,12 +209,10 @@ void srRender(bitmap_t *bitmap, model_t *model) {
         }
         watchEnd("tran_triangle");
 
-
         // draw triangle
         watchStart("draw_triangle");
         drawTriangle(bitmap, model, triangle, p);
         watchEnd("draw_triangle");
-
 
         watchEnd("triangle");
     }
@@ -279,7 +277,7 @@ void srInit(float width, float height) {
     srCamera.pos = (vec_t){0, 0, -20, 1};
     srCamera.target = (vec_t){0, 0, 0, 1};
     srCamera.up = (vec_t){0, 1, 0, 1};
-    matSetPerspective(&srCamera.projection, toRadians(70.0), width/height, 0.1, 1000.0);
+    matSetPerspective(&srCamera.projection, (float)toRadians(70.0), width/height, 0.1, 1000.0);
     camUpdate(&srCamera);
 }
 

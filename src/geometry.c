@@ -60,7 +60,7 @@ float vecCross2D(vec_t *a, vec_t *b) {
 
 float vecLength(vec_t *v) {
     float len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
-    return sqrt(len2);
+    return sqrtf(len2);
 }
 
 
@@ -126,8 +126,8 @@ void vecScale(vec_t *dst, vec_t *vec, float s) {
 
 
 void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
-    float sinAngle = sin(-angle);
-    float cosAngle = cos(-angle);
+    float sinAngle = sinf(-angle);
+    float cosAngle = cosf(-angle);
 
     vec_t v0, v1;
     vecScale(&v0, axis, sinAngle);
@@ -208,8 +208,8 @@ void matSetTranslation(matrix_t *mat, float x, float y, float z) {
 
 
 void matSetRotationAngle(matrix_t *mat, float x, float y, float z, float angle) {
-    float s = sin(angle);
-    float c = cos(angle);
+    float s = sinf(angle);
+    float c = cosf(angle);
     mat->m[0][0] = c+x*x*(1-c);         mat->m[0][1] = x*y*(1-c)-z*s;        mat->m[0][2] = x*z*(1-c)+y*s;      mat->m[0][3] = 0;
     mat->m[1][0] = y*x*(1-c)+z*s;       mat->m[1][1] = c+y*y*(1-c);          mat->m[1][2] = y*z*(1-c)-x*s;      mat->m[1][3] = 0;
     mat->m[2][0] = z*x*(1-c)-y*s;       mat->m[2][1] = z*y*(1-c)+x*s;        mat->m[2][2] = c+z*z*(1-c);        mat->m[2][3] = 0;
@@ -223,19 +223,19 @@ void matSetRotation(matrix_t *mat, float x, float y, float z) {
 
     matrix_t rx, ry, rz;
 
-    rz.m[0][0] = cos(z);            rz.m[0][1] = -sin(z);           rz.m[0][2] = 0;                 rz.m[0][3] = 0;
-    rz.m[1][0] = sin(z);            rz.m[1][1] = cos(z);            rz.m[1][2] = 0;                 rz.m[1][3] = 0;
+    rz.m[0][0] = cosf(z);            rz.m[0][1] = -sinf(z);           rz.m[0][2] = 0;                 rz.m[0][3] = 0;
+    rz.m[1][0] = sinf(z);            rz.m[1][1] = cosf(z);            rz.m[1][2] = 0;                 rz.m[1][3] = 0;
     rz.m[2][0] = 0;                 rz.m[2][1] = 0;                 rz.m[2][2] = 1;                 rz.m[2][3] = 0;
     rz.m[3][0] = 0;                 rz.m[3][1] = 0;                 rz.m[3][2] = 0;                 rz.m[3][3] = 1;
 
     rx.m[0][0] = 1;                 rx.m[0][1] = 0;                 rx.m[0][2] = 0;                 rx.m[0][3] = 0;
-    rx.m[1][0] = 0;                 rx.m[1][1] = cos(x);            rx.m[1][2] = -sin(x);           rx.m[1][3] = 0;
-    rx.m[2][0] = 0;                 rx.m[2][1] = sin(x);            rx.m[2][2] = cos(x);            rx.m[2][3] = 0;
+    rx.m[1][0] = 0;                 rx.m[1][1] = cosf(x);            rx.m[1][2] = -sinf(x);           rx.m[1][3] = 0;
+    rx.m[2][0] = 0;                 rx.m[2][1] = sinf(x);            rx.m[2][2] = cosf(x);            rx.m[2][3] = 0;
     rx.m[3][0] = 0;                 rx.m[3][1] = 0;                 rx.m[3][2] = 0;                 rx.m[3][3] = 1;
 
-    ry.m[0][0] = cos(y);            ry.m[0][1] = 0;                 ry.m[0][2] = -sin(y);           ry.m[0][3] = 0;
+    ry.m[0][0] = cosf(y);            ry.m[0][1] = 0;                 ry.m[0][2] = -sinf(y);           ry.m[0][3] = 0;
     ry.m[1][0] = 0;                 ry.m[1][1] = 1;                 ry.m[1][2] = 0;                 ry.m[1][3] = 0;
-    ry.m[2][0] = sin(y);            ry.m[2][1] = 0;                 ry.m[2][2] = cos(y);            ry.m[2][3] = 0;
+    ry.m[2][0] = sinf(y);            ry.m[2][1] = 0;                 ry.m[2][2] = cosf(y);            ry.m[2][3] = 0;
     ry.m[3][0] = 0;                 ry.m[3][1] = 0;                 ry.m[3][2] = 0;                 ry.m[3][3] = 1;
 
     matrix_t ryx;
@@ -288,9 +288,9 @@ void matSetScale(matrix_t *mat, float x, float y, float z) {
 
 
 void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
-    float tanHalfFOV = tan(fov/2.0);
+    float tanHalfFOV = tanf(fov/2.0f);
     float zRange = zNear - zFar;
-    mat->m[0][0] = 1.0/(tanHalfFOV*aspectRatio); mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
+    mat->m[0][0] = 1.0f/(tanHalfFOV*aspectRatio); mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
     mat->m[1][0] = 0;                            mat->m[1][1] = 1.0f/tanHalfFOV;              mat->m[1][2] = 0;                            mat->m[1][3] = 0;
     mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = (-zNear -zFar)/zRange;        mat->m[2][3] = 2 * zFar * zNear / zRange;
     mat->m[3][0] = 0;                            mat->m[3][1] = 0;                            mat->m[3][2] = 1;                            mat->m[3][3] = 0;

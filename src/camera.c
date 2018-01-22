@@ -13,8 +13,9 @@ void camUpdate(camera_t *cam) {
 // dir: 0 = forward; 1 = right; 2 = up
 void camMove(camera_t *cam, int dir, double amt) {
 
-    vec_t up = {0, 1, 0};
-    vec_t forward, right;
+    vec_t up = {0, 1, 0, 0};
+    vec_t forward = {0, 0, 0, 0};
+    vec_t right = {0, 0, 0, 0};
 
     vecSub(&forward, &cam->target, &cam->pos);
     vecNormalize(&forward, &forward);
