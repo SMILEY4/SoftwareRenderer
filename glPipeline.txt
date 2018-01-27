@@ -1,0 +1,56 @@
+#OPENGL PIPELINE
+https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview
+============================================================================
+
+
+#0. VERTEX SPECIFICATION
+ - set up ordered list of vertices to send to the pipeline
+ - vertices then rendered as primitives via drawing command
+
+#1. VERTEX PROCESSING
+ a) Vertex Shader
+   - processing of each individual vertex
+   - recieve attribute inputs from vertex specification
+   - converts each vertex into outgoing vertex based on used defined program
+
+ b) Tessellation
+
+ c) Geometry Shader
+   - used-defined program that processes each incoming primitive
+   - returns 0 or more output primitives
+
+#2. VERTEX POST-PROCESSING
+ a) Transform Feedback
+   - write output of previous shader in buffers
+
+ b) Clipping
+   - primitives that lie on boundary are split into several primitives
+   - vertex positions are transformed from clip-space to window space
+   		via Perspective Divide and Viewport Transform
+
+#3. PRIMITIVE ASSEMBLY
+ a)- collecting a run of vertex data output from prior stages
+   - compositing it into ordered sequense of primitives
+
+ b) Face Culling
+    - discard triangles facing away from the viewer
+
+#4. RASTERIZATION
+   - primitives are rasterized in the order in which they were given
+   - result is a sequence of fragments
+
+#5. FRAGMENT PROCESSING / FRAGMENT SHADER
+   - data from rasterization stage is processed by fragment shader
+   - output is a list of colors (+depth, +stencil) for each color buffer
+
+#6. PER-SAMPLE OPERATIONS
+ a) Sequence of culling tests
+   - Scissor Test: Fails, if outside of a specified rectangle of the screen
+   - Stencil Test: Fails, if the stencil value does not compare against
+   	   value in stencil buffer
+   - Depth Test:   Fails, if depth does not compare against underlying sample
+   	   in depth buffer
+
+  b) Color Blending
+
+  c) Writing to framebuffer

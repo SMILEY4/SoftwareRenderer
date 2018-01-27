@@ -80,34 +80,11 @@ void displayFunc() {
     watchEnd("prepOpenGL");
 
 
-
-
-    /*
-
-    glClear(GL_COLOR_BUFFER_BIT);
-    glPointSize( (useLowResBuffer ? lowResScale : 1) );
-
-    glBegin(GL_POINTS);
-
-    for(int y=0; y<displayBufferCurrent->height; y++) {
-        for(int x=0; x<displayBufferCurrent->width; x++) {
-            pixel_t *pixel = bmGetPixelAt(displayBufferCurrent, x, y);
-            color_t color = pixel->color;
-            if(color.a > 0) {
-                glColor4f(color.r, color.g, color.b, color.a);
-                glVertex2f(toGLCoords(x, displayBufferCurrent->width, false), toGLCoords(y, displayBufferCurrent->height, true));
-            }
-        }
-    }
-
-    glEnd();
-*/
-
     glutSwapBuffers();
 
     watchEnd("openGL");
 
-    watchPrintData();
+    //watchPrintData();
 
     end = clock();
     float dtms = (float)(end - start);

@@ -9,7 +9,11 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
+#include <windows.h>
 
+#define toRadians(angleDegrees) ((angleDegrees) * M_PI / 180.0)
+#define toDegrees(angleRadians) ((angleRadians) * 180.0 / M_PI
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -19,8 +23,9 @@
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
 int nKeysDown = 0;
-model_t model;
 
+model_t model;
+camera_t camera;
 
 
 void keyReleasedFunc(unsigned char key, int x, int y) {
@@ -81,9 +86,15 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
 
 void create() {
+
+    // MODEL
     obj_model_t objmodel;
+
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
     mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png");
+    //objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose.obj", &objmodel);
+    //mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose_diffuse.png");
+
     objFree(&objmodel);
 
     model.translation = (vec_t){ 0,   0,  0, 0};
@@ -91,7 +102,13 @@ void create() {
     model.scale =       (vec_t){10, -10, 10, 0};
     mdlUpdateTransform(&model);
 
-    srInit(WIDTH, HEIGHT);
+
+    // CAMERA
+    camera.pos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
+    camera.target = (vec_t){0, 0, 0, 1};
+    camera.up = (vec_t){0, 1, 0, 1};
+    matSetPerspective(&camera.projection, (float)toRadians(70.0), (float)WIDTH/(float)HEIGHT, 0.1, 1000.0);
+    camUpdate(&camera);
 
 }
 
@@ -101,17 +118,30 @@ void create() {
 void updateFunc(bitmap_t *displayBuffer) {
 
     double camSpeed = 0.4 ;
-    if(w) { camMove(&srCamera, 0,  camSpeed); }
-    if(s) { camMove(&srCamera, 0, -camSpeed); }
-    if(a) { camMove(&srCamera, 1,  camSpeed); }
-    if(d) { camMove(&srCamera, 1, -camSpeed); }
-    if(q) { camMove(&srCamera, 2,  camSpeed); }
-    if(e) { camMove(&srCamera, 2, -camSpeed); }
+    if(w) { camMove(&camera, 0,  camSpeed); }
+    if(s) { camMove(&camera, 0, -camSpeed); }
+    if(a) { camMove(&camera, 1,  camSpeed); }
+    if(d) { camMove(&camera, 1, -camSpeed); }
+    if(q) { camMove(&camera, 2,  camSpeed); }
+    if(e) { camMove(&camera, 2, -camSpeed); }
+
+
+    // DRAW
+    static matrix_t modelViewProjection;
+    matMul(&modelViewProjection, &camera.viewProjection, &model.modelTransform);
+    matSetScreenSpaceTransform(&camera.screenSpaceTransform, displayBuffer->width/2, displayBuffer->height/2);
+
+    renderdata_t data;
+    data.model = &model;
+    data.camera = &camera;
+    data.renderTargets = displayBuffer;
+    data.nRenderTargets = 1;
+    data.nVSArgs = 1;
+    data.vsArgs = calloc((size_t)data.nVSArgs, sizeof(matrix_t));
+    data.vsArgs[0] = &modelViewProjection;
 
     watchStart("rendering");
-
-    srRender(displayBuffer, &model);
-
+    render(&data);
     watchEnd("rendering");
 
 
@@ -139,6 +169,7 @@ void exitFunc() {
 
 
 int main(int argc, char *argv[]) {
+
     dpCreate(argc, argv, WIDTH, HEIGHT, 60);
 
     dpSetUpdateFunc(&updateFunc);

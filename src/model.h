@@ -24,7 +24,7 @@ typedef struct {
     matrix_t modelTransform;
 
     triangle_t *triangles;
-    int nTriangles;
+    unsigned int nTriangles;
     bitmap_t texture;
 } model_t;
 
