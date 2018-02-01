@@ -29,7 +29,7 @@ typedef struct {
 
 
 typedef struct {
-    int numElements;
+    unsigned int numElements;
     int *vert_indices;
     int *tex_indices;
     int *norm_Indices;
@@ -38,10 +38,10 @@ typedef struct {
 
 typedef struct {
 
-    int nVertices;
-    int nTexCoords;
-    int nNormals;
-    int nFaces;
+    unsigned int nVertices;
+    unsigned int nTexCoords;
+    unsigned int nNormals;
+    unsigned int nFaces;
 
     bool hasTexCoords;
     bool hasNormals;
