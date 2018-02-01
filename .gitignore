@@ -2,6 +2,7 @@
 cmake-build-debug/
 CMakeLists.txt
 watchdata_log.txt
+*.png
 
 # Prerequisites
 *.d
