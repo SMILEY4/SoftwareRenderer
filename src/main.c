@@ -91,7 +91,7 @@ void create() {
     obj_model_t objmodel;
 
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
-    mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png");
+    mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png", 0);
     //objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose.obj", &objmodel);
     //mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose_diffuse.png");
 
@@ -131,15 +131,19 @@ void updateFunc(bitmap_t *displayBuffer) {
     matMul(&modelViewProjection, &camera.viewProjection, &model.modelTransform);
     matSetScreenSpaceTransform(&camera.screenSpaceTransform, displayBuffer->width/2, displayBuffer->height/2);
 
+    // set render data
     renderdata_t data;
     data.model = &model;
     data.camera = &camera;
     data.renderTargets = displayBuffer;
     data.nRenderTargets = 1;
-    data.nVSArgs = 1;
-    data.vsArgs = calloc((size_t)data.nVSArgs, sizeof(matrix_t));
-    data.vsArgs[0] = &modelViewProjection;
 
+    // set uniforms
+    data.nUniformVars = 1;
+    data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
+    data.uniformVars[0] = &modelViewProjection;
+
+    // render
     watchStart("rendering");
     render(&data);
     watchEnd("rendering");

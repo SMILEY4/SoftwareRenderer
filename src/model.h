@@ -18,9 +18,7 @@ typedef struct vertex_t vertex_t;
 struct vertex_t {
     unsigned int vertex_id;
     triangle_t *parent;
-
     vec_t *valuesVec3;
-    unsigned int nValuesVec3;
 };
 
 
@@ -28,7 +26,6 @@ struct vertex_t {
 struct triangle_t {
     unsigned int triangle_id;
     model_t *parent;
-    
     vertex_t *vertices;
 };
 
@@ -41,6 +38,7 @@ struct model_t {
     
     triangle_t *triangles;
     unsigned int nTriangles;
+    unsigned int nVertValuesVec3;
     bitmap_t texture;
 };
 
@@ -48,7 +46,6 @@ struct model_t {
 
 void mdlUpdateTransform(model_t *model);
 
-// nAdditionalVertexValues -> space for values not in objmodel
 void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, unsigned int nAdditionalVertexValues);
 
 void mdlFreeModel(model_t *model);

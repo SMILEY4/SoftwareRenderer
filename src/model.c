@@ -2,7 +2,7 @@
 #include "objfile.h"
 #include "bitmap.h"
 #include <windows.h>
-
+#include <stdio.h>
 
 
 
@@ -31,15 +31,20 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, 
     }
     nValuesVec3 += nAdditionalVertexValues;
 
+    model->nVertValuesVec3 = nValuesVec3;
+
+
     // reserve memory for triangles
     model->nTriangles = objmodel->nFaces;
     model->triangles = calloc(model->nTriangles, sizeof(triangle_t));
+
 
     // for each triangle
     for(int i=0; i<model->nTriangles; i++) {
         obj_face_t face = objmodel->faces[i];
 
-        // get indices for vertives, texcoords, normals
+
+        // get indices for vertices, texcoords, normals
         int iVert0 = face.vert_indices[0]-1;
         int iVert1 = face.vert_indices[1]-1;
         int iVert2 = face.vert_indices[2]-1;
@@ -92,12 +97,14 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, 
 
     }
 
+
     // load texture
     if(fileTexture) {
         bitmap_t texture;
         bmCreateFromPNG(&texture, fileTexture);
         model->texture = texture;
     }
+
 
     // update transform matrix
     mdlUpdateTransform(model);
