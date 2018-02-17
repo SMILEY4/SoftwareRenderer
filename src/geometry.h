@@ -90,4 +90,15 @@ void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat);
 void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up);
 
 
+
+
+// OTHERS
+
+void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P);
+
+void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords);
+
+
+
+
 #endif
