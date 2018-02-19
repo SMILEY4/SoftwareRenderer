@@ -45,24 +45,16 @@ float toGLCoords(float x, float size, bool flip) {
 
 void displayFunc() {
 
-    //watchReset();
-
     clock_t start, end;
     start = clock();
 
     bmClear(displayBufferCurrent, &clearColor);
     (*updateFunction)(displayBufferCurrent);
 
-    watchStart("openGL");
-
-
-
     glClear(GL_COLOR_BUFFER_BIT);
 
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
-
-    watchStart("prepOpenGL");
 
     if(useLowResBuffer == 1) {
         glPointSize(lowResScale);
@@ -77,14 +69,7 @@ void displayFunc() {
         glDrawArrays(GL_POINTS, 0, displayBufferFull.width*displayBufferFull.height);
     }
 
-    watchEnd("prepOpenGL");
-
-
     glutSwapBuffers();
-
-    watchEnd("openGL");
-
-    //watchPrintData();
 
     end = clock();
     float dtms = (float)(end - start);

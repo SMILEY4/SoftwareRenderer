@@ -7,9 +7,9 @@
 
 
 
-void shaderVertex(vertex_t *vertexIn, vertex_t *vertexOut, void **uniformVars);
+void shaderVertex(renderdata_t *data, vertex_t *vertexIn, vertex_t *vertexOut);
 
-void shaderFragment(vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel, void **uniformVars);
+void shaderFragment(renderdata_t *data, vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel);
 
 
 

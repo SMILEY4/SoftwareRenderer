@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "stopwatch.h"
 #include "bresenham.h"
+#include "geometry.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -87,16 +88,16 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
 void create() {
 
-    // MODEL
+    // LOAD MODEL
     obj_model_t objmodel;
-
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
     mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png", 0);
     //objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose.obj", &objmodel);
     //mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose_diffuse.png");
-
     objFree(&objmodel);
 
+
+    // SETUP MODEL
     model.translation = (vec_t){ 0,   0,  0, 0};
     model.rotation =    (vec_t){ 0,   1,  0, 0};
     model.scale =       (vec_t){10, -10, 10, 0};
@@ -104,11 +105,10 @@ void create() {
 
 
     // CAMERA
-    camera.pos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
-    camera.target = (vec_t){0, 0, 0, 1};
-    camera.up = (vec_t){0, 1, 0, 1};
-    matSetPerspective(&camera.projection, (float)toRadians(70.0), (float)WIDTH/(float)HEIGHT, 0.1, 1000.0);
-    camUpdate(&camera);
+    vec_t camPos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
+    vec_t camTgt = (vec_t){0, 0, 0, 1};
+    vec_t camUp = (vec_t){0, 1, 0, 1};
+    camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 1000.0f, camPos, camTgt, camUp);
 
 }
 
@@ -117,6 +117,7 @@ void create() {
 
 void updateFunc(bitmap_t *displayBuffer) {
 
+    // HANDLE INPUT
     double camSpeed = 0.4 ;
     if(w) { camMove(&camera, 0,  camSpeed); }
     if(s) { camMove(&camera, 0, -camSpeed); }
@@ -125,28 +126,30 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(q) { camMove(&camera, 2,  camSpeed); }
     if(e) { camMove(&camera, 2, -camSpeed); }
 
+    double mdlSpeed = 0.1 ;
+    if(l) { model.rotation.y += mdlSpeed;  mdlUpdateTransform(&model); }
+    if(j) { model.rotation.y -= mdlSpeed;  mdlUpdateTransform(&model); }
+
+
+    // UPDATE CAMERA
+    camSetRendertargetEXT(&camera, displayBuffer, 1);
+
 
     // DRAW
     static matrix_t modelViewProjection;
     matMul(&modelViewProjection, &camera.viewProjection, &model.modelTransform);
-    matSetScreenSpaceTransform(&camera.screenSpaceTransform, displayBuffer->width/2, displayBuffer->height/2);
 
     // set render data
     renderdata_t data;
     data.model = &model;
     data.camera = &camera;
-    data.renderTargets = displayBuffer;
-    data.nRenderTargets = 1;
-
-    // set uniforms
-    data.nUniformVars = 1;
+    data.nUniformVars = 2;
     data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
     data.uniformVars[0] = &modelViewProjection;
+    data.uniformVars[1] = &model.modelTransform;
 
     // render
-    watchStart("rendering");
     render(&data);
-    watchEnd("rendering");
 
 
     if(nKeysDown == 0) {

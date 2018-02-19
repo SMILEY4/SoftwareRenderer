@@ -344,6 +344,51 @@ void matMul3(matrix_t *dst, matrix_t *left, matrix_t *center, matrix_t *right) {
 
 
 
+void matTranspose(matrix_t *dst, matrix_t *src) {
+    for(int i=0; i<4; i++) {
+        for(int j=0; j<4; j++) {
+            dst->m[i][j] = src->m[j][i];
+        }
+    }
+}
+
+
+
+float matDet(matrix_t *mat) {
+    return
+          mat->m[0][3] * mat->m[2][2] * mat->m[1][1] * mat->m[0][0]
+        - mat->m[0][2] * mat->m[3][3] * mat->m[1][1] * mat->m[0][0]
+        - mat->m[0][3] * mat->m[1][1] * mat->m[2][2] * mat->m[0][0]
+        + mat->m[0][1] * mat->m[3][3] * mat->m[2][2] * mat->m[0][0]
+        + mat->m[0][2] * mat->m[1][1] * mat->m[3][3] * mat->m[0][0]
+        - mat->m[0][1] * mat->m[2][2] * mat->m[3][3] * mat->m[0][0]
+        - mat->m[0][3] * mat->m[2][2] * mat->m[0][0] * mat->m[1][1]
+        + mat->m[0][2] * mat->m[3][3] * mat->m[0][0] * mat->m[1][1]
+        + mat->m[0][3] * mat->m[0][0] * mat->m[2][2] * mat->m[1][1]
+        - mat->m[0][0] * mat->m[3][3] * mat->m[2][2] * mat->m[1][1]
+        - mat->m[0][2] * mat->m[0][0] * mat->m[3][3] * mat->m[1][1]
+        + mat->m[0][0] * mat->m[2][2] * mat->m[3][3] * mat->m[1][1]
+        + mat->m[0][3] * mat->m[1][1] * mat->m[0][0] * mat->m[2][2]
+        - mat->m[0][1] * mat->m[3][3] * mat->m[0][0] * mat->m[2][2]
+        - mat->m[0][3] * mat->m[0][0] * mat->m[1][1] * mat->m[2][2]
+        + mat->m[0][0] * mat->m[3][3] * mat->m[1][1] * mat->m[2][2]
+        + mat->m[0][1] * mat->m[0][0] * mat->m[3][3] * mat->m[2][2]
+        - mat->m[0][0] * mat->m[1][1] * mat->m[3][3] * mat->m[2][2]
+        - mat->m[0][2] * mat->m[1][1] * mat->m[0][0] * mat->m[3][3]
+        + mat->m[0][1] * mat->m[2][2] * mat->m[0][0] * mat->m[3][3]
+        + mat->m[0][2] * mat->m[0][0] * mat->m[1][1] * mat->m[3][3]
+        - mat->m[0][0] * mat->m[2][2] * mat->m[1][1] * mat->m[3][3]
+        - mat->m[0][1] * mat->m[0][0] * mat->m[2][2] * mat->m[3][3]
+        + mat->m[0][0] * mat->m[1][1] * mat->m[2][2] * mat->m[3][3];
+}
+
+
+void matInv(matrix_t *dst, matrix_t *src) {
+}
+
+
+
+
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat) {
     float rx = mat->m[0][0] * vec->x + mat->m[0][1] * vec->y + mat->m[0][2] * vec->z + mat->m[0][3] * vec->w;
     float ry = mat->m[1][0] * vec->x + mat->m[1][1] * vec->y + mat->m[1][2] * vec->z + mat->m[1][3] * vec->w;

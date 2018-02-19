@@ -10,16 +10,9 @@ typedef struct {
 
     model_t *model;
     camera_t *camera;
-    bitmap_t *renderTargets;
-    unsigned int nRenderTargets;
 
     void **uniformVars;
     unsigned int nUniformVars;
-
-    vertex_t *verticesV; // after vertex-shader
-    vertex_t *verticesS; // in screen-space (may contain uninitialized elements)
-    int *discard;        // 0 = draw vertex; 1=discard vertex
-    unsigned int nVertices;
 
 } renderdata_t;
 

@@ -33,10 +33,13 @@ int cullBackface(vec_t A, vec_t B, vec_t C) {
 
 
 
-void processPixel(renderdata_t *data, bitmap_t *bitmap, int x, int y, model_t *model, triangle_t *triangle, vec_t vertices[3]) {
+void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
+
+    bitmap_t *mainRenderTarget = data->camera->rendertargets;
+    model_t *model = data->model;
 
     // get pixel
-    pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+    pixel_t *pixel = bmGetPixelAt(mainRenderTarget, x, y);
     if(!pixel) {
         return;
     }
@@ -44,11 +47,11 @@ void processPixel(renderdata_t *data, bitmap_t *bitmap, int x, int y, model_t *m
     // get pixel and barycentric coordinates
     vec_t pxCoords = {x+0.5f, y+0.5f, 0};
     vec_t baryCoords;
-    barycentric(&baryCoords, &vertices[0], &vertices[1], &vertices[2], &pxCoords);
+    barycentric(&baryCoords, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &pxCoords);
 
     // interpolate position
     vec_t iplPos;
-    interpolateBary(&iplPos, &vertices[0], &vertices[1], &vertices[2], &baryCoords);
+    interpolateBary(&iplPos, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &baryCoords);
 
     // depth test
     if(iplPos.z < pixel->depth) {
@@ -59,16 +62,16 @@ void processPixel(renderdata_t *data, bitmap_t *bitmap, int x, int y, model_t *m
     vec_t *iplValues = calloc((size_t)model->nVertValuesVec3, sizeof(vec_t));
     iplValues[0] = iplPos;
     for(int i=1; i<model->nVertValuesVec3; i++) {
-        vec_t in0 = triangle->vertices[0].valuesVec3[i];
-        vec_t in1 = triangle->vertices[1].valuesVec3[i];
-        vec_t in2 = triangle->vertices[2].valuesVec3[i];
+        vec_t in0 = vertices[0].valuesVec3[i];
+        vec_t in1 = vertices[1].valuesVec3[i];
+        vec_t in2 = vertices[2].valuesVec3[i];
         vec_t out;
         interpolateBary(&out, &in0, &in1, &in2, &baryCoords);
         iplValues[i] = out;
     }
 
     // fragment shader
-    shaderFragment(iplValues, model->nVertValuesVec3, pixel, data->uniformVars);
+    shaderFragment(data, iplValues, model->nVertValuesVec3, pixel);
     pixel->color.a = 1.0;
     pixel->depth = iplPos.z;
 
@@ -79,41 +82,43 @@ void processPixel(renderdata_t *data, bitmap_t *bitmap, int x, int y, model_t *m
 
 
 
-void rasterizeTriangle(renderdata_t *data, bitmap_t *bitmap, model_t *model, triangle_t *triangle, vec_t *vertices) {
+void rasterizeTriangle(renderdata_t *data, vertex_t vertices[3]) {
 
-    float minY = vertices[0].y;
-    minY = fminf(minY, vertices[1].y);
-    minY = fminf(minY, vertices[2].y);
-    minY = fminf(minY, bitmap->height-1);
+    bitmap_t *mainRenderTarget = data->camera->rendertargets;
+    
+    float minY = vertices[0].valuesVec3[0].y;
+    minY = fminf(minY, vertices[1].valuesVec3[0].y);
+    minY = fminf(minY, vertices[2].valuesVec3[0].y);
+    minY = fminf(minY, mainRenderTarget->height-1);
     minY = fmaxf(minY, 0);
 
-    float maxY = vertices[0].y;
-    maxY = fmaxf(maxY, vertices[1].y);
-    maxY = fmaxf(maxY, vertices[2].y);
-    maxY = fminf(maxY, bitmap->height-1);
+    float maxY = vertices[0].valuesVec3[0].y;
+    maxY = fmaxf(maxY, vertices[1].valuesVec3[0].y);
+    maxY = fmaxf(maxY, vertices[2].valuesVec3[0].y);
+    maxY = fminf(maxY, mainRenderTarget->height-1);
     minY = fmaxf(minY, 0);
 
     for(int i=(int)floorf(minY); i<=(int)ceilf(maxY); i++) {
-        bitmap->scanbufferMin[i] = bitmap->width+100;
-        bitmap->scanbufferMax[i] = -(bitmap->width+100);
+        mainRenderTarget->scanbufferMin[i] = mainRenderTarget->width+100;
+        mainRenderTarget->scanbufferMax[i] = -(mainRenderTarget->width+100);
 
     }
 
-    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[1].x, (int)vertices[1].y);
-    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[2].x, (int)vertices[2].y);
-    bhDrawLineToScanbuffer(bitmap->scanbufferMin, bitmap->scanbufferMax, bitmap->height, (int)vertices[1].x, (int)vertices[1].y, (int)vertices[2].x, (int)vertices[2].y);
+    bhDrawLineToScanbuffer(mainRenderTarget->scanbufferMin, mainRenderTarget->scanbufferMax, mainRenderTarget->height, (int)vertices[0].valuesVec3[0].x, (int)vertices[0].valuesVec3[0].y, (int)vertices[1].valuesVec3[0].x, (int)vertices[1].valuesVec3[0].y);
+    bhDrawLineToScanbuffer(mainRenderTarget->scanbufferMin, mainRenderTarget->scanbufferMax, mainRenderTarget->height, (int)vertices[0].valuesVec3[0].x, (int)vertices[0].valuesVec3[0].y, (int)vertices[2].valuesVec3[0].x, (int)vertices[2].valuesVec3[0].y);
+    bhDrawLineToScanbuffer(mainRenderTarget->scanbufferMin, mainRenderTarget->scanbufferMax, mainRenderTarget->height, (int)vertices[1].valuesVec3[0].x, (int)vertices[1].valuesVec3[0].y, (int)vertices[2].valuesVec3[0].x, (int)vertices[2].valuesVec3[0].y);
 
     for(int y=(int)floorf(minY); y<=(int)ceilf(maxY); y++) {
 
-        int startX = bitmap->scanbufferMin[y]-1;
-        int endX   = bitmap->scanbufferMax[y]+1;
+        int startX = mainRenderTarget->scanbufferMin[y]-1;
+        int endX   = mainRenderTarget->scanbufferMax[y]+1;
 
         for(int x=startX; x<=endX; x++) {
 
             // get pixel and barycentric coordinates
             vec_t texelCoords = {x+0.5f, y+0.5f, 0};
             vec_t baryCoords;
-            barycentric(&baryCoords, &vertices[0], &vertices[1], &vertices[2], &texelCoords);
+            barycentric(&baryCoords, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &texelCoords);
 
             // test if sample is part of triangle
             if(baryCoords.x < 0 || baryCoords.y < 0 || baryCoords.z < 0) {
@@ -121,7 +126,7 @@ void rasterizeTriangle(renderdata_t *data, bitmap_t *bitmap, model_t *model, tri
             }
 
             // draw pixel
-            processPixel(data, bitmap, x, y, model, triangle, vertices);
+            processPixel(data, x, y, vertices);
 
         }
     }
@@ -152,7 +157,7 @@ void processVertices(renderdata_t *data) {
 
     // setup matrices
     matrix_t screenSpaceTransform;
-    matSetScreenSpaceTransform(&screenSpaceTransform, data->renderTargets[0].width/2, data->renderTargets[0].height/2);
+    matSetScreenSpaceTransform(&screenSpaceTransform, data->camera->rendertargets[0].width/2, data->camera->rendertargets[0].height/2);
 
     // for each triangle
     const unsigned int nTriangles = data->model->nTriangles;
@@ -171,9 +176,9 @@ void processVertices(renderdata_t *data) {
 
 
         // VERTEX PROCESSING
-        shaderVertex(&vertexT0, &vertexV0, data->uniformVars);
-        shaderVertex(&vertexT1, &vertexV1, data->uniformVars);
-        shaderVertex(&vertexT2, &vertexV2, data->uniformVars);
+        shaderVertex(data, &vertexT0, &vertexV0);
+        shaderVertex(data, &vertexT1, &vertexV1);
+        shaderVertex(data, &vertexT2, &vertexV2);
 
 
         // VERTEX POST PROCESSING
@@ -184,6 +189,7 @@ void processVertices(renderdata_t *data) {
         matTransform(&vertexS0.valuesVec3[0], &vertexV0.valuesVec3[0], &screenSpaceTransform);
         matTransform(&vertexS1.valuesVec3[0], &vertexV1.valuesVec3[0], &screenSpaceTransform);
         matTransform(&vertexS2.valuesVec3[0], &vertexV2.valuesVec3[0], &screenSpaceTransform);
+
         vecPerspectiveDivide(&vertexS0.valuesVec3[0], &vertexS0.valuesVec3[0]);
         vecPerspectiveDivide(&vertexS1.valuesVec3[0], &vertexS1.valuesVec3[0]);
         vecPerspectiveDivide(&vertexS2.valuesVec3[0], &vertexS2.valuesVec3[0]);
@@ -194,12 +200,9 @@ void processVertices(renderdata_t *data) {
             continue;
         }
 
-
         // start rasterizer
-        vec_t vertices[3] = {vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]};
-        rasterizeTriangle(data, &data->renderTargets[0], data->model, triangle, vertices);
-
-
+        vertex_t vertices[3] = {vertexS0, vertexS1, vertexS2};
+        rasterizeTriangle(data, vertices);
     }
 
 

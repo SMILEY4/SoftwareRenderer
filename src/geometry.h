@@ -85,6 +85,12 @@ void matMul(matrix_t *dst, matrix_t *left, matrix_t *right);
 
 void matMul3(matrix_t *dst, matrix_t *left, matrix_t *center, matrix_t *right);
 
+void matTranspose(matrix_t *dst, matrix_t *src);
+
+float matDet(matrix_t *mat);
+
+void matInv(matrix_t *dst, matrix_t *src);
+
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat);
 
 void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up);

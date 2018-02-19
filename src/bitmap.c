@@ -6,6 +6,15 @@
 
 
 
+void bmCreatePixel(unsigned int x, unsigned int y, pixel_t *pxOut) {
+    color_t color = {0.0f, 0.0f, 0.0f, 0.0f};
+    pixel_t px = {color, 0.0f, x, y};
+    pxOut = &px;
+}
+
+
+
+
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y) {
     if(x < 0) { goto error; }
     if(x >= bitmap->width) { goto error; }
@@ -62,6 +71,12 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     bitmap->height = height;
     bitmap->scanbufferMin = calloc(height, sizeof(int));
     bitmap->scanbufferMax = calloc(height, sizeof(int));
+    for(unsigned int y=0; y<bitmap->height; y++) {
+        for(unsigned int x=0; x<bitmap->width; x++) {
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            bmCreatePixel(x, y, pixel);
+        }
+    }
 }
 
 
@@ -85,9 +100,10 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
 
     // store in bitmap
     bmCreate(bitmap, (int)w, (int)h);
-    for(int y=0; y<w; y++) {
-        for (int x=0; x<h; x++) {
+    for(unsigned int y=0; y<w; y++) {
+        for (unsigned int x=0; x<h; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            bmCreatePixel(x, y, pixel);
             if(pixel) {
                 int r = (int)(image[4 * y * w + 4 * x + 0]);
                 int g = (int)(image[4 * y * w + 4 * x + 1]);
