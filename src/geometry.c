@@ -153,6 +153,16 @@ void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
 
 
 
+float vecAngle(vec_t *a, vec_t *b) {
+    const float lenAdd = sqrtf( (a->x+b->x)*(a->x+b->x) + (a->y+b->y)*(a->y+b->y) + (a->z+b->z)*(a->z+b->z) );
+    const float lenSub = sqrtf( (a->x-b->x)*(a->x-b->x) + (a->y-b->y)*(a->y-b->y) + (a->z-b->z)*(a->z-b->z) );
+    float angleRad = 2.0f * atanf(lenSub / lenAdd);
+    return (float)((angleRad) * 180.0 / M_PI);
+}
+
+
+
+
 void vecPerspectiveDivide(vec_t *dst, vec_t *src) {
     dst->x = src->x / src->w;
     dst->y = src->y / src->w;

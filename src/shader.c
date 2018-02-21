@@ -1,6 +1,8 @@
 #include "geometry.h"
 #include "shader.h"
 #include "renderer.h"
+#include "bitmap.h"
+#include "camera.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -25,23 +27,59 @@ void shaderFragment(renderdata_t *data, vec_t *iplVertexValuesVec3, int nVertexV
 
     void **uniformVars = data->uniformVars;
     bitmap_t *renderTargets = data->camera->rendertargets;
+    matrix_t *nrmTransform = (matrix_t*)(*(uniformVars+1));
+
+
+    // get light dir
+    vec_t lightdir;
+    vec_t *lightpos = (vec_t*)uniformVars[2];
+    vecScale(&lightdir, lightpos, -1.0f);
+    float lightDist = vecLength(&lightdir);
+    vecNormalize(&lightdir, &lightdir);
+
+
 
     // get interpolated values
     vec_t iplPos = iplVertexValuesVec3[0];
     vec_t iplUV = iplVertexValuesVec3[1];
     vec_t iplNormal = iplVertexValuesVec3[2];
 
+
+    // get view dir
+    vec_t viewdir;
+    vecSub(&viewdir, &data->camera->pos, &iplPos);
+    vecNormalize(&viewdir, &viewdir);
+
+
+    // get texture colors
+    pixel_t *pxDiffuse =    bmGetPixelUV(&data->model->textures[0], iplUV.x, iplUV.y);
+    pixel_t *pxNM =         bmGetPixelUV(&data->model->textures[1], iplUV.x, iplUV.y);
+    pixel_t *pxNMTangent =  bmGetPixelUV(&data->model->textures[2], iplUV.x, iplUV.y);
+    pixel_t *pxSpec =       bmGetPixelUV(&data->model->textures[3], iplUV.x, iplUV.y);
+    pixel_t *pxSSS =        bmGetPixelUV(&data->model->textures[4], iplUV.x, iplUV.y);
+
+
+    // calculate normal
+    vec_t nrmVert = iplNormal;
+    vec_t nrmNM = {pxNM->color.r, pxNM->color.g, pxNM->color.b};
+    vec_t nrmNMT = {pxNMTangent->color.r, pxNMTangent->color.g, pxNMTangent->color.b};
+
+    vec_t minusOne = {-1, -1, -1};
+    vecNormalize(&nrmVert, &nrmVert);
+    vecScale(&nrmNM, &nrmNM, -2.0f);   vecSub(&nrmNM, &nrmNM, &minusOne);   vecNormalize(&nrmNM, &nrmNM); // world space normal, transformed
+
+    vec_t N;
+    matTransform(&N, &nrmNM, nrmTransform);
+    vecNormalize(&N, &N);
+
     // calc shading
-    vec_t lightDir = (vec_t){0.5, 1.0, 0.7};
-    vecNormalize(&iplNormal, &iplNormal);
-    vecNormalize(&lightDir, &lightDir);
-    float NdotL = vecDot(&iplNormal, &lightDir);
-    NdotL = fminf(fmaxf(NdotL, 0.0f), 1.0f);
+    float NdotL = vecDot(&N, &lightdir);
+    NdotL = fminf(fmaxf(NdotL, 0.0f), 1.0f) + 0.4f;
 
     // set final color
-    pixel->color.r = NdotL + 0.1f;
-    pixel->color.g = NdotL + 0.1f;
-    pixel->color.b = NdotL + 0.1f;
+    pixel->color.r = NdotL * pxDiffuse->color.r;
+    pixel->color.g = NdotL * pxDiffuse->color.g;
+    pixel->color.b = NdotL * pxDiffuse->color.b;
 
 }
 

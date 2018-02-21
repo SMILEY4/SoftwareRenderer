@@ -16,7 +16,7 @@ void mdlUpdateTransform(model_t *model) {
 
 
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, unsigned int nAdditionalVertexValues) {
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues) {
     if(!objmodel) {
         return;
     }
@@ -99,10 +99,14 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, 
 
 
     // load texture
-    if(fileTexture) {
-        bitmap_t texture;
-        bmCreateFromPNG(&texture, fileTexture);
-        model->texture = texture;
+    if(textureFiles && nTextures > 0) {
+        model->textures = calloc(nTextures, sizeof(bitmap_t));
+        for(int i=0; i<nTextures; i++) {
+            char *filename = textureFiles[i];
+            bitmap_t texture;
+            bmCreateFromPNG(&texture, filename);
+            model->textures[i] = texture;
+        }
     }
 
 

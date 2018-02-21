@@ -14,7 +14,6 @@
 
 
 
-
 int cullBackface(vec_t A, vec_t B, vec_t C) {
     vec_t triNormal;
     vec_t triAB, triAC;
@@ -54,7 +53,7 @@ void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
     interpolateBary(&iplPos, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &baryCoords);
 
     // depth test
-    if(iplPos.z < pixel->depth) {
+    if(iplPos.z > pixel->depth) {
         return;
     }
 
@@ -101,7 +100,6 @@ void rasterizeTriangle(renderdata_t *data, vertex_t vertices[3]) {
     for(int i=(int)floorf(minY); i<=(int)ceilf(maxY); i++) {
         mainRenderTarget->scanbufferMin[i] = mainRenderTarget->width+100;
         mainRenderTarget->scanbufferMax[i] = -(mainRenderTarget->width+100);
-
     }
 
     bhDrawLineToScanbuffer(mainRenderTarget->scanbufferMin, mainRenderTarget->scanbufferMax, mainRenderTarget->height, (int)vertices[0].valuesVec3[0].x, (int)vertices[0].valuesVec3[0].y, (int)vertices[1].valuesVec3[0].x, (int)vertices[1].valuesVec3[0].y);
@@ -133,6 +131,12 @@ void rasterizeTriangle(renderdata_t *data, vertex_t vertices[3]) {
 
 }
 
+
+
+
+float calcDepth(float n, float f, float z) {
+    return (z-n)/(f-n);
+}
 
 
 
@@ -195,14 +199,31 @@ void processVertices(renderdata_t *data) {
         vecPerspectiveDivide(&vertexS2.valuesVec3[0], &vertexS2.valuesVec3[0]);
 
 
-        // CULLING
-        if(cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]) == 1) {
-            continue;
+
+        float zNear = data->camera->zNear;
+        float zFar = data->camera->zFar;
+        vertexS0.valuesVec3[0].z = calcDepth(zNear, zFar, -vertexV0.valuesVec3[0].z);
+        vertexS1.valuesVec3[0].z = calcDepth(zNear, zFar, -vertexV1.valuesVec3[0].z);
+        vertexS2.valuesVec3[0].z = calcDepth(zNear, zFar, -vertexV2.valuesVec3[0].z);
+
+        // BOUNDS-CHECK + BACKFACE CULLING
+        const float w = data->camera->rendertargets[0].width;
+        const float h = data->camera->rendertargets[0].height;
+        unsigned int nOutside = 0;
+        if( vertexS0.valuesVec3[0].z < 0.0 && vertexS1.valuesVec3[0].z < 0.0 && vertexS2.valuesVec3[0].z < 0.0 ) { continue;}
+        if( vertexS0.valuesVec3[0].x < 0 || vertexS0.valuesVec3[0].x >= w || vertexS0.valuesVec3[0].y < 0 || vertexS0.valuesVec3[0].y >= h ) { nOutside++; }
+        if( vertexS1.valuesVec3[0].x < 0 || vertexS1.valuesVec3[0].x >= w || vertexS1.valuesVec3[0].y < 0 || vertexS1.valuesVec3[0].y >= h ) { nOutside++; }
+        if( vertexS2.valuesVec3[0].x < 0 || vertexS2.valuesVec3[0].x >= w || vertexS2.valuesVec3[0].y < 0 || vertexS2.valuesVec3[0].y >= h ) { nOutside++; }
+
+        if(nOutside == 3 || cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0])) {
+           continue;
         }
 
-        // start rasterizer
+
+        // START RASTERIZER
         vertex_t vertices[3] = {vertexS0, vertexS1, vertexS2};
         rasterizeTriangle(data, vertices);
+
     }
 
 

@@ -52,6 +52,8 @@ void vecScale(vec_t *dst, vec_t *vec, float s);
 
 void vecRotate(vec_t *dst, vec_t * vec, vec_t *axis, float angle);
 
+float vecAngle(vec_t *a, vec_t *b);
+
 void vecPerspectiveDivide(vec_t *dst, vec_t *src);
 
 

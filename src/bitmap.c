@@ -30,6 +30,15 @@ pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y) {
 
 
 
+pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v) {
+    int x = (int)((float)bitmap->width  * u);
+    int y = (int)((float)bitmap->height * (1.0-v));
+    return bmGetPixelAt(bitmap, x, y);
+}
+
+
+
+
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
     if(dst->width != src->width || dst->height != src->height) {
         return;
@@ -57,7 +66,7 @@ void bmClear(bitmap_t *bitmap, color_t *color) {
             pixel->color.g = color->g;
             pixel->color.b = color->b;
             pixel->color.a = color->a;
-            pixel->depth = 0.0;
+            pixel->depth = 1.0;
         }
     }
 }

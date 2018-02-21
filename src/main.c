@@ -12,9 +12,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <windows.h>
+#include <time.h>
 
 #define toRadians(angleDegrees) ((angleDegrees) * M_PI / 180.0)
-#define toDegrees(angleRadians) ((angleRadians) * 180.0 / M_PI
+#define toDegrees(angleRadians) ((angleRadians) * 180.0 / M_PI)
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -23,10 +24,12 @@
 
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
+bool space;
 int nKeysDown = 0;
 
 model_t model;
 camera_t camera;
+vec_t lightpos;
 
 
 void keyReleasedFunc(unsigned char key, int x, int y) {
@@ -43,6 +46,8 @@ void keyReleasedFunc(unsigned char key, int x, int y) {
     if(key == 'l') { l = false; nKeysDown--; }
     if(key == 'u') { u = false; nKeysDown--; }
     if(key == 'o') { o = false; nKeysDown--; }
+
+    if(key == 32) { space = false; nKeysDown--; }
 }
 
 
@@ -63,6 +68,7 @@ void keyPressedFunc(unsigned char key, int x, int y) {
     if(key == 'u') { u = true; nKeysDown++; }
     if(key == 'o') { o = true; nKeysDown++; }
 
+    if(key == 32) { space = true; nKeysDown++; }
 
     if(key == 'i') {
         pixel_t *pixel = bmGetPixelAt(dpGetBuffer(), x, y);
@@ -89,12 +95,31 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 void create() {
 
     // LOAD MODEL
-    obj_model_t objmodel;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head.obj", &objmodel);
-    mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head_diffuse.png", 0);
-    //objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose.obj", &objmodel);
-    //mdlCreateFromObj(&objmodel, &model, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo3_pose_diffuse.png");
-    objFree(&objmodel);
+/*
+    obj_model_t obj_africanHead;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_africanHead);
+    char *texturesAfricanHead[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
+    };
+    mdlCreateFromObj(&obj_africanHead, &model, texturesAfricanHead, 5, 0);
+    objFree(&obj_africanHead);
+*/
+
+    obj_model_t ob_diablo;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
+    char *texturesAfricanHead[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+    };
+    mdlCreateFromObj(&ob_diablo, &model, texturesAfricanHead, 5, 0);
+    objFree(&ob_diablo);
 
 
     // SETUP MODEL
@@ -108,8 +133,11 @@ void create() {
     vec_t camPos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
     vec_t camTgt = (vec_t){0, 0, 0, 1};
     vec_t camUp = (vec_t){0, 1, 0, 1};
-    camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 1000.0f, camPos, camTgt, camUp);
+    camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
 
+
+    // MISC
+    lightpos = (vec_t){-22.5792f, -11.6000f, -3.8877f, 1.0000f};
 }
 
 
@@ -130,7 +158,6 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(l) { model.rotation.y += mdlSpeed;  mdlUpdateTransform(&model); }
     if(j) { model.rotation.y -= mdlSpeed;  mdlUpdateTransform(&model); }
 
-
     // UPDATE CAMERA
     camSetRendertargetEXT(&camera, displayBuffer, 1);
 
@@ -143,10 +170,12 @@ void updateFunc(bitmap_t *displayBuffer) {
     renderdata_t data;
     data.model = &model;
     data.camera = &camera;
-    data.nUniformVars = 2;
+    data.nUniformVars = 3;
     data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
     data.uniformVars[0] = &modelViewProjection;
     data.uniformVars[1] = &model.modelTransform;
+    data.uniformVars[2] = &lightpos;
+
 
     // render
     render(&data);

@@ -30,6 +30,8 @@ typedef struct {
 
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y);
 
+pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v);
+
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
 void bmClear(bitmap_t *bitmap, color_t *color);

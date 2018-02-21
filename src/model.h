@@ -39,14 +39,14 @@ struct model_t {
     triangle_t *triangles;
     unsigned int nTriangles;
     unsigned int nVertValuesVec3;
-    bitmap_t texture;
+    bitmap_t *textures;
 };
 
 
 
 void mdlUpdateTransform(model_t *model);
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char *fileTexture, unsigned int nAdditionalVertexValues);
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues);
 
 void mdlFreeModel(model_t *model);
 
