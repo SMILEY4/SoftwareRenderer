@@ -11,7 +11,7 @@
 
 
 
-void shaderVertex(renderdata_t *data, vertex_t *vertexIn, vertex_t *vertexOut) {
+void shaderVertex_main(renderdata_t *data, vertex_t *vertexIn, vertex_t *vertexOut) {
     void **uniformVars = data->uniformVars;
     matrix_t *mvp = (matrix_t*)(*(uniformVars+0));
     matrix_t *nrmTransform = (matrix_t*)(*(uniformVars+1));
@@ -23,7 +23,7 @@ void shaderVertex(renderdata_t *data, vertex_t *vertexIn, vertex_t *vertexOut) {
 
 
 
-void shaderFragment(renderdata_t *data, vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel) {
+void shaderFragment_main(renderdata_t *data, vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel) {
 
     void **uniformVars = data->uniformVars;
     bitmap_t *renderTargets = data->camera->rendertargets;

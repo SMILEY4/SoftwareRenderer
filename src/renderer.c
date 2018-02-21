@@ -70,7 +70,7 @@ void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
     }
 
     // fragment shader
-    shaderFragment(data, iplValues, model->nVertValuesVec3, pixel);
+    data->fsh(data, iplValues, model->nVertValuesVec3, pixel);
     pixel->color.a = 1.0;
     pixel->depth = iplPos.z;
 
@@ -180,10 +180,9 @@ void processVertices(renderdata_t *data) {
 
 
         // VERTEX PROCESSING
-        shaderVertex(data, &vertexT0, &vertexV0);
-        shaderVertex(data, &vertexT1, &vertexV1);
-        shaderVertex(data, &vertexT2, &vertexV2);
-
+        data->vsh(data, &vertexT0, &vertexV0);
+        data->vsh(data, &vertexT1, &vertexV1);
+        data->vsh(data, &vertexT2, &vertexV2);
 
         // VERTEX POST PROCESSING
         memcpy(vertexS0.valuesVec3, vertexV0.valuesVec3, sizeof(vec_t)*nValuesVec3);

@@ -6,15 +6,22 @@
 #include "camera.h"
 
 
-typedef struct {
+typedef struct renderdata_t renderdata_t;
+
+struct renderdata_t {
 
     model_t *model;
     camera_t *camera;
 
+    void (*vsh)(renderdata_t*, vertex_t*, vertex_t*);
+    void (*fsh)(renderdata_t*, vec_t*, int, pixel_t*);
+
     void **uniformVars;
     unsigned int nUniformVars;
 
-} renderdata_t;
+};
+
+
 
 
 

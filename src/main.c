@@ -7,6 +7,7 @@
 #include "stopwatch.h"
 #include "bresenham.h"
 #include "geometry.h"
+#include "shader.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -170,12 +171,13 @@ void updateFunc(bitmap_t *displayBuffer) {
     renderdata_t data;
     data.model = &model;
     data.camera = &camera;
+    data.vsh = &shaderVertex_main;
+    data.fsh = &shaderFragment_main;
     data.nUniformVars = 3;
     data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
     data.uniformVars[0] = &modelViewProjection;
     data.uniformVars[1] = &model.modelTransform;
     data.uniformVars[2] = &lightpos;
-
 
     // render
     render(&data);
