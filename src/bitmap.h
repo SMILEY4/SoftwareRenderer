@@ -34,6 +34,8 @@ pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v);
 
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
+void bmDrawTo(bitmap_t *target, bitmap_t *img);
+
 void bmClear(bitmap_t *bitmap, color_t *color);
 
 void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);

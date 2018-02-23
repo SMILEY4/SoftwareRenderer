@@ -51,8 +51,31 @@ void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
             dstPixel->color.g = srcPixel->color.g;
             dstPixel->color.b = srcPixel->color.b;
             dstPixel->color.a = srcPixel->color.a;
+            dstPixel->depth = srcPixel->depth;
         }
     }
+}
+
+
+
+
+void bmDrawTo(bitmap_t *target, bitmap_t *img) {
+
+    int w = min(target->width, img->width);
+    int h = min(target->height, img->height);
+
+    for(int x=0; x<w; x++) {
+        for(int y=0; y<h; y++) {
+            pixel_t *tgtPixel = bmGetPixelAt(target, x, y);
+            pixel_t *imgPixel = bmGetPixelAt(img, x, y);
+            tgtPixel->color.r = imgPixel->color.r;
+            tgtPixel->color.g = imgPixel->color.g;
+            tgtPixel->color.b = imgPixel->color.b;
+            tgtPixel->color.a = imgPixel->color.a;
+            tgtPixel->depth = imgPixel->depth;
+        }
+    }
+
 }
 
 

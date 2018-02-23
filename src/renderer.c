@@ -14,6 +14,7 @@
 
 
 
+
 int cullBackface(vec_t A, vec_t B, vec_t C) {
     vec_t triNormal;
     vec_t triAB, triAC;
@@ -214,7 +215,14 @@ void processVertices(renderdata_t *data) {
         if( vertexS1.valuesVec3[0].x < 0 || vertexS1.valuesVec3[0].x >= w || vertexS1.valuesVec3[0].y < 0 || vertexS1.valuesVec3[0].y >= h ) { nOutside++; }
         if( vertexS2.valuesVec3[0].x < 0 || vertexS2.valuesVec3[0].x >= w || vertexS2.valuesVec3[0].y < 0 || vertexS2.valuesVec3[0].y >= h ) { nOutside++; }
 
-        if(nOutside == 3 || cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0])) {
+        int cullBF = 0;
+        if(data->cullingMode == 1) { // backface
+            cullBF = cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]);
+        } else {
+            cullBF = cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]) == 0 ? 1 : 0;
+        }
+
+        if(nOutside == 3 || cullBF) {
            continue;
         }
 

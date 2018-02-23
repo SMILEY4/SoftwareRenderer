@@ -29,7 +29,7 @@ bool space;
 int nKeysDown = 0;
 
 model_t model;
-camera_t camera;
+camera_t camera, camLight;
 vec_t lightpos;
 
 
@@ -71,10 +71,14 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
     if(key == 32) { space = true; nKeysDown++; }
 
+    if(key == 32) {
+        camera.pos = (vec_t){lightpos.x, lightpos.y, lightpos.z, 1.0f};
+        camUpdate(&camera);
+    }
+
     if(key == 'i') {
         pixel_t *pixel = bmGetPixelAt(dpGetBuffer(), x, y);
         if(pixel) {
-
             printf("==============\n");
             printf("PIXEL AT %d %d\n", x, y);
             printf("Color:\n");
@@ -86,6 +90,10 @@ void keyPressedFunc(unsigned char key, int x, int y) {
             printf("==============\n");
 
         }
+
+        printf("CAM POS: %f %f %f \n", camera.pos.x, camera.pos.y, camera.pos.z);
+        printf("==============\n");
+
     }
 
 }
@@ -119,7 +127,7 @@ void create() {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
     };
-    mdlCreateFromObj(&ob_diablo, &model, texturesAfricanHead, 5, 0);
+    mdlCreateFromObj(&ob_diablo, &model, texturesAfricanHead, 5, 1);
     objFree(&ob_diablo);
 
 
@@ -136,9 +144,12 @@ void create() {
     vec_t camUp = (vec_t){0, 1, 0, 1};
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
 
+    // LIGHT
+    //lightpos = (vec_t){-22.5792f, -11.6000f, -3.8877f, 1.0000f};
+    //lightpos = (vec_t){-23.506086f, -11.599998f, -3.566123f, 1.0000f};
+    lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
+    camCreateFS(&camLight, 512, 512, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
 
-    // MISC
-    lightpos = (vec_t){-22.5792f, -11.6000f, -3.8877f, 1.0000f};
 }
 
 
@@ -164,24 +175,60 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
     // DRAW
-    static matrix_t modelViewProjection;
-    matMul(&modelViewProjection, &camera.viewProjection, &model.modelTransform);
+    static matrix_t biasMatrix = {
+            0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.5f, 1.0f
+    };
 
-    // set render data
-    renderdata_t data;
+    // shadow map
+    static matrix_t depthMVP;
+    static matrix_t depthBiasMVP;
+
+    matMul(&depthMVP, &camLight.viewProjection, &model.modelTransform);
+    matMul(&depthBiasMVP, &biasMatrix, &depthMVP);
+
+    static renderdata_t dataShadow;
+    dataShadow.model = &model;
+    dataShadow.camera = &camLight;
+    dataShadow.cullingMode = 1;
+    dataShadow.vsh = &shaderVertex_shadow;
+    dataShadow.fsh = &shaderFragment_shadow;
+    dataShadow.nUniformVars = 2;
+    dataShadow.uniformVars = calloc((size_t)dataShadow.nUniformVars, sizeof(matrix_t));
+    dataShadow.uniformVars[0] = &depthMVP;
+    dataShadow.uniformVars[1] = &model.modelTransform;
+
+    bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
+    render(&dataShadow);
+
+    // object shader
+    static matrix_t mvp;
+    matMul(&mvp, &camera.viewProjection, &model.modelTransform);
+
+    static renderdata_t data;
     data.model = &model;
     data.camera = &camera;
+    data.cullingMode = 1;
     data.vsh = &shaderVertex_main;
     data.fsh = &shaderFragment_main;
-    data.nUniformVars = 3;
+    data.nUniformVars = 5;
     data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
-    data.uniformVars[0] = &modelViewProjection;
+    data.uniformVars[0] = &mvp;
     data.uniformVars[1] = &model.modelTransform;
     data.uniformVars[2] = &lightpos;
+    data.uniformVars[3] = &dataShadow.camera->rendertargets[0];
+    data.uniformVars[4] = &depthMVP;
 
-    // render
+
     render(&data);
 
+  //  bmDrawTo(displayBuffer, &dataShadow.camera->rendertargets[0]);
+
+
+    free(data.uniformVars);
+    free(dataShadow.uniformVars);
 
     if(nKeysDown == 0) {
         if(dpIsUsingLowRes() == 1) {

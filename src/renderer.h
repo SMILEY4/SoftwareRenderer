@@ -16,7 +16,9 @@ struct renderdata_t {
     void (*vsh)(renderdata_t*, vertex_t*, vertex_t*);
     void (*fsh)(renderdata_t*, vec_t*, int, pixel_t*);
 
-    void **uniformVars;
+    int cullingMode; // 0 = (back)face-culling disabled, 1 = cull backface, 2 = cull frontface
+
+    void **uniformVars; // shared variables between main application and shaders
     unsigned int nUniformVars;
 
 };
