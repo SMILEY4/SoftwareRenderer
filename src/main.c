@@ -8,6 +8,7 @@
 #include "bresenham.h"
 #include "geometry.h"
 #include "shader.h"
+#include "postProcess.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -31,6 +32,8 @@ int nKeysDown = 0;
 model_t model;
 camera_t camera, camLight;
 vec_t lightpos;
+
+bool renderShadowmap;
 
 
 void keyReleasedFunc(unsigned char key, int x, int y) {
@@ -72,7 +75,7 @@ void keyPressedFunc(unsigned char key, int x, int y) {
     if(key == 32) { space = true; nKeysDown++; }
 
     if(key == 32) {
-        camera.pos = (vec_t){lightpos.x, lightpos.y, lightpos.z, 1.0f};
+        //camera.pos = (vec_t){lightpos.x, lightpos.y, lightpos.z, 1.0f};
         camUpdate(&camera);
     }
 
@@ -101,6 +104,9 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
 
 
+
+
+
 void create() {
 
     // LOAD MODEL
@@ -114,7 +120,7 @@ void create() {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
     };
-    mdlCreateFromObj(&obj_africanHead, &model, texturesAfricanHead, 5, 0);
+    mdlCreateFromObj(&obj_africanHead, &model, texturesAfricanHead, 5, 1);
     objFree(&obj_africanHead);
 */
 
@@ -150,6 +156,8 @@ void create() {
     lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
     camCreateFS(&camLight, 512, 512, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
 
+
+    renderShadowmap = true;
 }
 
 
@@ -167,8 +175,8 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(e) { camMove(&camera, 2, -camSpeed); }
 
     double mdlSpeed = 0.1 ;
-    if(l) { model.rotation.y += mdlSpeed;  mdlUpdateTransform(&model); }
-    if(j) { model.rotation.y -= mdlSpeed;  mdlUpdateTransform(&model); }
+    if(l) { model.rotation.y += mdlSpeed;  mdlUpdateTransform(&model); renderShadowmap = true; }
+    if(j) { model.rotation.y -= mdlSpeed;  mdlUpdateTransform(&model); renderShadowmap = true; }
 
     // UPDATE CAMERA
     camSetRendertargetEXT(&camera, displayBuffer, 1);
@@ -200,8 +208,11 @@ void updateFunc(bitmap_t *displayBuffer) {
     dataShadow.uniformVars[0] = &depthMVP;
     dataShadow.uniformVars[1] = &model.modelTransform;
 
-    bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
-    render(&dataShadow);
+    if(renderShadowmap) {
+        bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
+        render(&dataShadow);
+        renderShadowmap = false;
+    }
 
     // object shader
     static matrix_t mvp;
@@ -224,7 +235,12 @@ void updateFunc(bitmap_t *displayBuffer) {
 
     render(&data);
 
-  //  bmDrawTo(displayBuffer, &dataShadow.camera->rendertargets[0]);
+    // visualize shadowmap
+    //  bmDrawTo(displayBuffer, &dataShadow.camera->rendertargets[0]);
+
+
+    ppAmbientOcclusion(displayBuffer);
+
 
 
     free(data.uniformVars);

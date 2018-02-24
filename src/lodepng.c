@@ -5926,7 +5926,7 @@ const char* lodepng_error_text(unsigned code)
             /*end of out buffer memory reached while inflating:
      This can happen if the inflated deflate data is longer than the amount of bytes required to fill up
      all the pixels of the image, given the color depth and image dimensions. Something that doesn't
-     happen in a normal, well encoded, PNG image.*/
+     happen in a pos, well encoded, PNG image.*/
         case 22: return "end of out buffer memory reached while inflating";
         case 23: return "end of in buffer memory reached while inflating";
         case 24: return "invalid FCHECK in zlib header";

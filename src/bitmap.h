@@ -1,7 +1,7 @@
 #ifndef SOFTWARERENDERER_BITMAP_H
 #define SOFTWARERENDERER_BITMAP_H
 
-
+#include "geometry.h"
 #include <stdbool.h>
 
 

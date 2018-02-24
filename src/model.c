@@ -87,7 +87,6 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
             triangle.vertices[2].valuesVec3[2] = (vec_t) {objmodel->normals[iNorm2].x, objmodel->normals[iNorm2].y, objmodel->normals[iNorm2].z, 0.0};
         }
 
-
         // set metadata for each vertex
         model->triangles[i] = triangle;
         for(int j=0; j<3; j++) {
@@ -96,6 +95,7 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
         }
 
     }
+
 
 
     // load texture
