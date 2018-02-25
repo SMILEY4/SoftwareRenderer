@@ -33,10 +33,10 @@ int cullBackface(vec_t A, vec_t B, vec_t C) {
 
 
 
-void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
+void processPixel(renderdata_t *data, int indexModel, int x, int y, vertex_t vertices[3]) {
 
     bitmap_t *mainRenderTarget = data->camera->rendertargets;
-    model_t *model = data->model;
+    model_t *model = data->models+indexModel;
 
     // get pixel
     pixel_t *pixel = bmGetPixelAt(mainRenderTarget, x, y);
@@ -71,7 +71,7 @@ void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
     }
 
     // fragment shader
-    data->fsh(data, iplValues, model->nVertValuesVec3, pixel);
+    data->fsh(data, indexModel, iplValues, model->nVertValuesVec3, pixel);
     pixel->color.a = 1.0;
     pixel->depth = iplPos.z;
 
@@ -82,7 +82,7 @@ void processPixel(renderdata_t *data, int x, int y, vertex_t vertices[3]) {
 
 
 
-void rasterizeTriangle(renderdata_t *data, vertex_t vertices[3]) {
+void rasterizeTriangle(renderdata_t *data, int indexModel, vertex_t vertices[3]) {
 
     bitmap_t *mainRenderTarget = data->camera->rendertargets;
     
@@ -125,7 +125,7 @@ void rasterizeTriangle(renderdata_t *data, vertex_t vertices[3]) {
             }
 
             // draw pixel
-            processPixel(data, x, y, vertices);
+            processPixel(data, indexModel, x, y, vertices);
 
         }
     }
@@ -142,7 +142,7 @@ float calcDepth(float n, float f, float z) {
 
 
 
-void processVertices(renderdata_t *data) {
+void processVertices(renderdata_t *data, int indexModel) {
 
     // setup temp vertices
     vertex_t vertexV0;
@@ -152,7 +152,7 @@ void processVertices(renderdata_t *data) {
     vertex_t vertexS1;
     vertex_t vertexS2;
 
-    unsigned int nValuesVec3 = data->model->nVertValuesVec3;
+    unsigned int nValuesVec3 = data->models[indexModel].nVertValuesVec3;
     vertexV0.valuesVec3 = calloc(nValuesVec3, sizeof(vec_t));
     vertexV1.valuesVec3 = calloc(nValuesVec3, sizeof(vec_t));
     vertexV2.valuesVec3 = calloc(nValuesVec3, sizeof(vec_t));
@@ -165,9 +165,9 @@ void processVertices(renderdata_t *data) {
     matSetScreenSpaceTransform(&screenSpaceTransform, data->camera->rendertargets[0].width/2, data->camera->rendertargets[0].height/2);
 
     // for each triangle
-    const unsigned int nTriangles = data->model->nTriangles;
+    const unsigned int nTriangles = data->models[indexModel].nTriangles;
     for(int i=nTriangles; i>0; i--) {
-        triangle_t *triangle = data->model->triangles + (i-1);
+        triangle_t *triangle = data->models[indexModel].triangles + (i-1);
 
 
         // VERTEX SPECIFICATION
@@ -181,9 +181,9 @@ void processVertices(renderdata_t *data) {
 
 
         // VERTEX PROCESSING
-        data->vsh(data, &vertexT0, &vertexV0);
-        data->vsh(data, &vertexT1, &vertexV1);
-        data->vsh(data, &vertexT2, &vertexV2);
+        data->vsh(data, indexModel, &vertexT0, &vertexV0);
+        data->vsh(data, indexModel, &vertexT1, &vertexV1);
+        data->vsh(data, indexModel, &vertexT2, &vertexV2);
 
         // VERTEX POST PROCESSING
         memcpy(vertexS0.valuesVec3, vertexV0.valuesVec3, sizeof(vec_t)*nValuesVec3);
@@ -229,7 +229,7 @@ void processVertices(renderdata_t *data) {
 
         // START RASTERIZER
         vertex_t vertices[3] = {vertexS0, vertexS1, vertexS2};
-        rasterizeTriangle(data, vertices);
+        rasterizeTriangle(data, indexModel, vertices);
 
     }
 
@@ -248,7 +248,9 @@ void processVertices(renderdata_t *data) {
 
 
 void render(renderdata_t *data) {
-    processVertices(data);
+    for(int i=0; i<data->nModels; i++) {
+        processVertices(data, i);
+    }
 }
 
 
