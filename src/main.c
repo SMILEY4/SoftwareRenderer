@@ -8,8 +8,9 @@
 #include "bresenham.h"
 #include "geometry.h"
 #include "shader.h"
-#include "postProcess.h"
+#include "lodepng.h"
 
+#include "postProcess.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
@@ -23,17 +24,187 @@
 #define HEIGHT 600
 
 
-
+// input
 bool w, a, s, d, q, e;
 bool i, j, k, l, u, o;
 bool space;
 int nKeysDown = 0;
 
-model_t model;
-camera_t camera, camLight;
-vec_t lightpos;
 
+// models
+model_t modelHead;
+model_t modelDiablo;
+
+// cameras
+camera_t cameraMain;
+camera_t camLight;
+
+// renderdata
+renderdata_t dataShadow;
+renderdata_t dataMain;
+
+// misc
+vec_t lightpos;
 bool renderShadowmap;
+bitmap_t skybox;
+matrix_t biasMatrix;
+matrix_t depthMVP;
+matrix_t depthBiasMVP;
+matrix_t mvp;
+
+
+
+
+
+
+void create() {
+
+    // CREATE MODELS (HEAD)
+    obj_model_t obj_head;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_head);
+    char *texturesHead[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
+    };
+    mdlCreateFromObj(&obj_head, &modelHead, texturesHead, 5, 1);
+    objFree(&obj_head);
+
+    modelHead.translation = (vec_t){ 0,   0,  0, 0};
+    modelHead.rotation =    (vec_t){ 0,   1,  0, 0};
+    modelHead.scale =       (vec_t){ 7,  -7,  7, 0};
+    mdlUpdateTransform(&modelHead);
+
+
+    obj_model_t ob_diablo;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
+    char *texturesDiablo[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+    };
+    mdlCreateFromObj(&ob_diablo, &modelDiablo, texturesDiablo, 5, 1);
+    objFree(&ob_diablo);
+
+    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
+    modelDiablo.rotation =    (vec_t){ 0,   1,  0, 0};
+    modelDiablo.scale =       (vec_t){ 7,  -7,  7, 0};
+    mdlUpdateTransform(&modelDiablo);
+
+
+    // SETUP SKYBOX
+    bmCreateFromPNG(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\Shiodome_Stairs.png");
+
+
+    // CAMERA
+    vec_t camPos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
+    vec_t camTgt = (vec_t){0, 0, 0, 1};
+    vec_t camUp = (vec_t){0, 1, 0, 1};
+    camCreateEXT(&cameraMain, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
+
+
+    // LIGHT
+    lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
+    camCreateFS(&camLight, 512, 512, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
+
+
+    // MISC
+    renderShadowmap = true;
+    biasMatrix = (matrix_t) {
+            0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.5f, 1.0f
+    };
+
+
+    // RENDER DATA
+
+    // shadow pass
+    dataShadow.models = &modelHead;
+    dataShadow.nModels = 1;
+    dataShadow.camera = &camLight;
+    dataShadow.cullingMode = 1;
+    dataShadow.vsh = &shaderVertex_shadow;
+    dataShadow.fsh = &shaderFragment_shadow;
+    dataShadow.nUniformVars = 2;
+    dataShadow.uniformVars = calloc((size_t)dataShadow.nUniformVars, sizeof(matrix_t));
+    dataShadow.uniformVars[0] = &depthMVP;
+    dataShadow.uniformVars[1] = &modelHead.modelTransform;
+
+
+    // main pass
+    dataMain.models = &modelHead;
+    dataMain.nModels = 1;
+    dataMain.camera = &cameraMain;
+    dataMain.cullingMode = 1;
+    dataMain.vsh = &shaderVertex_main;
+    dataMain.fsh = &shaderFragment_main;
+    dataMain.nUniformVars = 6;
+    dataMain.uniformVars = calloc((size_t)dataMain.nUniformVars, sizeof(matrix_t));
+    dataMain.uniformVars[0] = &mvp;
+    dataMain.uniformVars[1] = &modelHead.modelTransform;
+    dataMain.uniformVars[2] = &lightpos;
+    dataMain.uniformVars[3] = &dataShadow.camera->rendertargets[0];
+    dataMain.uniformVars[4] = &depthMVP;
+    dataMain.uniformVars[5] = &skybox;
+
+}
+
+
+
+
+void updateFunc(bitmap_t *displayBuffer) {
+
+    // HANDLE INPUT
+    double camSpeed = 0.4 ;
+    if(w) { camMove(&cameraMain, 0,  camSpeed); }
+    if(s) { camMove(&cameraMain, 0, -camSpeed); }
+    if(a) { camMove(&cameraMain, 1,  camSpeed); }
+    if(d) { camMove(&cameraMain, 1, -camSpeed); }
+    if(q) { camMove(&cameraMain, 2,  camSpeed); }
+    if(e) { camMove(&cameraMain, 2, -camSpeed); }
+
+    // UPDATE CAMERA
+    camSetRendertargetEXT(&cameraMain, displayBuffer, 1);
+
+
+    // DRAW - SHADOW PASS
+    if(renderShadowmap) {
+        matMul(&depthMVP, &camLight.viewProjection, &modelHead.modelTransform);
+        matMul(&depthBiasMVP, &biasMatrix, &depthMVP);
+        bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
+        render(&dataShadow);
+        renderShadowmap = false;
+    }
+
+    // DRAW - MAIN PASS
+    matMul(&mvp, &cameraMain.viewProjection, &modelHead.modelTransform);
+    render(&dataMain);
+
+    // DRAW - PP-PASS
+    //ppAmbientOcclusion(displayBuffer);
+
+
+    // SWITCH RESOLUTION
+    if(nKeysDown == 0) {
+        if(dpIsUsingLowRes() == 1) {
+            dpUseFullRes();
+        }
+    } else {
+        if(dpIsUsingLowRes() == 0) {
+            dpUseLowRes();
+        }
+    }
+}
+
+
+
+
 
 
 void keyReleasedFunc(unsigned char key, int x, int y) {
@@ -76,7 +247,7 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
     if(key == 32) {
         //camera.pos = (vec_t){lightpos.x, lightpos.y, lightpos.z, 1.0f};
-        camUpdate(&camera);
+        camUpdate(&cameraMain);
     }
 
     if(key == 'i') {
@@ -94,7 +265,7 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
         }
 
-        printf("CAM POS: %f %f %f \n", camera.pos.x, camera.pos.y, camera.pos.z);
+        printf("CAM POS: %f %f %f \n", cameraMain.pos.x, cameraMain.pos.y, cameraMain.pos.z);
         printf("==============\n");
 
     }
@@ -107,169 +278,21 @@ void keyPressedFunc(unsigned char key, int x, int y) {
 
 
 
-void create() {
-
-    // LOAD MODEL
-/*
-    obj_model_t obj_africanHead;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_africanHead);
-    char *texturesAfricanHead[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
-    };
-    mdlCreateFromObj(&obj_africanHead, &model, texturesAfricanHead, 5, 1);
-    objFree(&obj_africanHead);
-*/
-
-    obj_model_t ob_diablo;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
-    char *texturesAfricanHead[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
-    };
-    mdlCreateFromObj(&ob_diablo, &model, texturesAfricanHead, 5, 1);
-    objFree(&ob_diablo);
-
-
-    // SETUP MODEL
-    model.translation = (vec_t){ 0,   0,  0, 0};
-    model.rotation =    (vec_t){ 0,   1,  0, 0};
-    model.scale =       (vec_t){10, -10, 10, 0};
-    mdlUpdateTransform(&model);
-
-
-    // CAMERA
-    vec_t camPos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
-    vec_t camTgt = (vec_t){0, 0, 0, 1};
-    vec_t camUp = (vec_t){0, 1, 0, 1};
-    camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
-
-    // LIGHT
-    //lightpos = (vec_t){-22.5792f, -11.6000f, -3.8877f, 1.0000f};
-    //lightpos = (vec_t){-23.506086f, -11.599998f, -3.566123f, 1.0000f};
-    lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
-    camCreateFS(&camLight, 512, 512, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
-
-
-    renderShadowmap = true;
-}
-
-
-
-
-void updateFunc(bitmap_t *displayBuffer) {
-
-    // HANDLE INPUT
-    double camSpeed = 0.4 ;
-    if(w) { camMove(&camera, 0,  camSpeed); }
-    if(s) { camMove(&camera, 0, -camSpeed); }
-    if(a) { camMove(&camera, 1,  camSpeed); }
-    if(d) { camMove(&camera, 1, -camSpeed); }
-    if(q) { camMove(&camera, 2,  camSpeed); }
-    if(e) { camMove(&camera, 2, -camSpeed); }
-
-    double mdlSpeed = 0.1 ;
-    if(l) { model.rotation.y += mdlSpeed;  mdlUpdateTransform(&model); renderShadowmap = true; }
-    if(j) { model.rotation.y -= mdlSpeed;  mdlUpdateTransform(&model); renderShadowmap = true; }
-
-    // UPDATE CAMERA
-    camSetRendertargetEXT(&camera, displayBuffer, 1);
-
-
-    // DRAW
-    static matrix_t biasMatrix = {
-            0.5f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.5f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.5f, 0.0f,
-            0.5f, 0.5f, 0.5f, 1.0f
-    };
-
-    // shadow map
-    static matrix_t depthMVP;
-    static matrix_t depthBiasMVP;
-
-    matMul(&depthMVP, &camLight.viewProjection, &model.modelTransform);
-    matMul(&depthBiasMVP, &biasMatrix, &depthMVP);
-
-    static renderdata_t dataShadow;
-    dataShadow.model = &model;
-    dataShadow.camera = &camLight;
-    dataShadow.cullingMode = 1;
-    dataShadow.vsh = &shaderVertex_shadow;
-    dataShadow.fsh = &shaderFragment_shadow;
-    dataShadow.nUniformVars = 2;
-    dataShadow.uniformVars = calloc((size_t)dataShadow.nUniformVars, sizeof(matrix_t));
-    dataShadow.uniformVars[0] = &depthMVP;
-    dataShadow.uniformVars[1] = &model.modelTransform;
-
-    if(renderShadowmap) {
-        bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
-        render(&dataShadow);
-        renderShadowmap = false;
-    }
-
-    // object shader
-    static matrix_t mvp;
-    matMul(&mvp, &camera.viewProjection, &model.modelTransform);
-
-    static renderdata_t data;
-    data.model = &model;
-    data.camera = &camera;
-    data.cullingMode = 1;
-    data.vsh = &shaderVertex_main;
-    data.fsh = &shaderFragment_main;
-    data.nUniformVars = 5;
-    data.uniformVars = calloc((size_t)data.nUniformVars, sizeof(matrix_t));
-    data.uniformVars[0] = &mvp;
-    data.uniformVars[1] = &model.modelTransform;
-    data.uniformVars[2] = &lightpos;
-    data.uniformVars[3] = &dataShadow.camera->rendertargets[0];
-    data.uniformVars[4] = &depthMVP;
-
-
-    render(&data);
-
-    // visualize shadowmap
-    //  bmDrawTo(displayBuffer, &dataShadow.camera->rendertargets[0]);
-
-
-    ppAmbientOcclusion(displayBuffer);
-
-
-
-    free(data.uniformVars);
-    free(dataShadow.uniformVars);
-
-    if(nKeysDown == 0) {
-        if(dpIsUsingLowRes() == 1) {
-            dpUseFullRes();
-        }
-    } else {
-        if(dpIsUsingLowRes() == 0) {
-            dpUseLowRes();
-        }
-    }
-}
-
-
-
-
 void exitFunc() {
+    bmDispose(&skybox);
     dpDispose();
     watchFreeData();
-    mdlFreeModel(&model);
+    mdlFreeModel(&modelHead);
+    mdlFreeModel(&modelDiablo);
+    free(dataMain.uniformVars);
+    free(dataShadow.uniformVars);
 }
 
 
 
 
 int main(int argc, char *argv[]) {
+
 
     dpCreate(argc, argv, WIDTH, HEIGHT, 60);
 

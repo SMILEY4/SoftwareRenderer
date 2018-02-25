@@ -66,7 +66,7 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img) {
             tgtPixel->depth = imgPixel->depth;
         }
     }
-    
+
 }
 
 

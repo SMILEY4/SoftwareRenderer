@@ -2,6 +2,7 @@
 #include "postProcess.h"
 #include "bitmap.h"
 #include "geometry.h"
+#include "camera.h"
 #include <math.h>
 #include <windows.h>
 #include <time.h>
@@ -10,9 +11,12 @@
 
 
 
+
+
 float randFloat() {
     return (float)rand() / (float)RAND_MAX;
 }
+
 
 
 void ppAmbientOcclusion(bitmap_t *img) {
@@ -84,6 +88,7 @@ void ppAmbientOcclusion(bitmap_t *img) {
             ao = 1.0f - ao*ao;
 
             pixel->color = (color_t){pixel->color.r*ao, pixel->color.g*ao, pixel->color.b*ao, 1.0f};
+            //pixel->color = (color_t){ao, ao, ao, 1.0f};
 
         }
 
