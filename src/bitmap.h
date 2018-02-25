@@ -13,7 +13,7 @@ typedef struct {
 typedef struct {
     color_t color;
     float depth;
-    const unsigned int x, y;
+    unsigned int x, y;
 } pixel_t;
 
 

@@ -6,15 +6,6 @@
 
 
 
-void bmCreatePixel(unsigned int x, unsigned int y, pixel_t *pxOut) {
-    color_t color = {0.0f, 0.0f, 0.0f, 0.0f};
-    pixel_t px = {color, 0.0f, x, y};
-    pxOut = &px;
-}
-
-
-
-
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y) {
     if(x < 0) { goto error; }
     if(x >= bitmap->width) { goto error; }
@@ -75,7 +66,7 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img) {
             tgtPixel->depth = imgPixel->depth;
         }
     }
-
+    
 }
 
 
@@ -106,7 +97,7 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     for(unsigned int y=0; y<bitmap->height; y++) {
         for(unsigned int x=0; x<bitmap->width; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            bmCreatePixel(x, y, pixel);
+            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f,  1.0f,  x, y};
         }
     }
 }
@@ -132,10 +123,10 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
 
     // store in bitmap
     bmCreate(bitmap, (int)w, (int)h);
-    for(unsigned int y=0; y<w; y++) {
-        for (unsigned int x=0; x<h; x++) {
+    for(unsigned int y=0; y<h; y++) {
+        for (unsigned int x=0; x<w; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            bmCreatePixel(x, y, pixel);
+            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f,  1.0f,  x, y};
             if(pixel) {
                 int r = (int)(image[4 * y * w + 4 * x + 0]);
                 int g = (int)(image[4 * y * w + 4 * x + 1]);
