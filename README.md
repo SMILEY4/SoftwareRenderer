@@ -1,4 +1,4 @@
-A 3d Software Renderer loosly based on the OpenGL-Pipline written in pure C.
+A 3d Software Renderer written in pure C.
 
 Current Features
  - Display .obj models
