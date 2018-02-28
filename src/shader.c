@@ -11,12 +11,9 @@
 
 
 
-
-
 void shaderVertex_shadow(renderdata_t *data, int indexModel, vertex_t *vertexIn, vertex_t *vertexOut) {
-    void **uniformVars = data->uniformVars;
-    matrix_t *mvp = (matrix_t*)(*(uniformVars+0));
-    matTransform(&vertexOut->valuesVec3[0], &vertexIn->valuesVec3[0], mvp);
+    matrix_t mvp = data->models[indexModel].mvp;
+    matTransform(&vertexOut->valuesVec3[0], &vertexIn->valuesVec3[0], &mvp);
 }
 
 
@@ -36,28 +33,24 @@ void shaderFragment_shadow(renderdata_t *data, int indexModel, vec_t *iplVertexV
 
 void shaderVertex_main(renderdata_t *data, int indexModel, vertex_t *vertexIn, vertex_t *vertexOut) {
     void **uniformVars = data->uniformVars;
+    matrix_t *nrmTransform = &data->models[indexModel].modelTransform;
+    matrix_t *mvpShadow = (matrix_t*)(*(uniformVars+3));
+    camera_t *camLight = (camera_t*)(*(uniformVars+2));
 
     // vertex
-    matrix_t *mvp = (matrix_t*)(*(uniformVars+0));
+    matrix_t *mvp = &data->models[indexModel].mvp;
     matTransform(&vertexOut->valuesVec3[0], &vertexIn->valuesVec3[0], mvp);
 
     // vertex (shadow)
-    matrix_t *mvpShadow = (matrix_t*)(*(uniformVars+4));
     matTransform(&vertexOut->valuesVec3[3], &vertexIn->valuesVec3[0], mvpShadow);
-
     float z = -vertexOut->valuesVec3[3].z;
-
     static matrix_t screenSpaceTransform;
-    matSetScreenSpaceTransform(&screenSpaceTransform, 512.0f/2.0f, 512.0f/2.0f);
-
+    matSetScreenSpaceTransform(&screenSpaceTransform, (float)camLight->rendertargets[0].width/2.0f, (float)camLight->rendertargets[0].height/2.0f);
     matTransform(&vertexOut->valuesVec3[3], &vertexOut->valuesVec3[3], &screenSpaceTransform);
     vecPerspectiveDivide(&vertexOut->valuesVec3[3], &vertexOut->valuesVec3[3]);
-
-    vertexOut->valuesVec3[3].z = (z-0.5f)/(100.0f-0.5f);
-
+    vertexOut->valuesVec3[3].z = (z-camLight->zNear)/(camLight->zFar-camLight->zNear);
 
     // normals
-    matrix_t *nrmTransform = (matrix_t*)(*(uniformVars+1));
     matTransform(&vertexOut->valuesVec3[2], &vertexIn->valuesVec3[2], nrmTransform);
     vecNormalize(&vertexOut->valuesVec3[2], &vertexOut->valuesVec3[2]);
 }
@@ -75,7 +68,10 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
 
     void **uniformVars = data->uniformVars;
     bitmap_t *renderTargets = data->camera->rendertargets;
-    matrix_t *nrmTransform = (matrix_t*)(*(uniformVars+1));
+    matrix_t *nrmTransform = &data->models[indexModel].modelTransform;
+    bitmap_t *shadowMap = (bitmap_t*)(*(uniformVars));
+    bitmap_t *skybox = (bitmap_t*)(*(uniformVars+1));
+
 
     // get interpolated values
     vec_t iplPos = iplVertexValuesVec3[0];
@@ -123,12 +119,10 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
     float bias = fmaxf(0.05f * (1.0f - cosTheta), 0.005f);
     bias = clamp(bias, 0.0f, 0.01f);
 
-    bitmap_t *shadowMap = (bitmap_t*)(*(uniformVars+3));
     pixel_t *shadowPX = bmGetPixelAt(shadowMap, (unsigned int)iplShadowCoord.x, (unsigned int)iplShadowCoord.y);
     if(shadowPX && shadowPX->color.r < iplShadowCoord.z-bias) {
         visibility = 0.0;
     }
-
 
 
 
@@ -158,37 +152,66 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
     pixel->color.g = finalColor.y;
     pixel->color.b = finalColor.z;
 
-
-    pixel->color.r = 0.0;
-    pixel->color.g = 1.0;
-    pixel->color.b = 0.0;
-
-
-    bitmap_t *skybox = (bitmap_t*)(*(uniformVars+5));
-
-    vec_t R = {Nv.x, Nv.y, Nv.z, 0.0}; // reflection vector ( calculate with reflect(...) )
-    vecNormalize(&R, &R);
+//    pixel->color.r = visibility + 0.1f;
+//    pixel->color.g = visibility + 0.1f;
+//    pixel->color.b = visibility + 0.1f;
 
 
-    float sx, sy;
-    const float F_PI = (float)M_PI;
 
-    sx = (atan2f(R.z, R.x) + F_PI) / (2.0f*F_PI);
-    sy = acosf(-R.y) / F_PI;
+//
+//
+//    vec_t R = {Nv.x, Nv.y, Nv.z, 0.0}; // reflection vector ( calculate with reflect(...) )
+//    vecNormalize(&R, &R);
+//
+//
+//    float sx, sy;
+//    const float F_PI = (float)M_PI;
+//
+//    sx = (atan2f(R.z, R.x) + F_PI) / (2.0f*F_PI);
+//    sy = acosf(-R.y) / F_PI;
+//
+//
+//    sx *= skybox->width;
+//    sy *= skybox->height;
+//
+//    pixel_t *pxSky = bmGetPixelAt(skybox, (int)sx, (int)sy);
+//    if(!pxSky) {
+//        return;
+//    }
+//
+//    pixel->color.r = pxSky->color.r;
+//    pixel->color.g = pxSky->color.g;
+//    pixel->color.b = pxSky->color.b;
 
 
-    sx *= skybox->width;
-    sy *= skybox->height;
 
-    pixel_t *pxSky = bmGetPixelAt(skybox, (int)sx, (int)sy);
-    if(!pxSky) {
-        return;
-    }
 
-    pixel->color.r = pxSky->color.r;
-    pixel->color.g = pxSky->color.g;
-    pixel->color.b = pxSky->color.b;
-
+//    float hits = 0;
+//    float nTests = 0;
+//
+//    float cosTheta = vecDot(&N, &L);
+//    float bias = fmaxf(0.05f * (1.0f - cosTheta), 0.005f);
+//    bias = clamp(bias, 0.0f, 0.01f);
+//
+//    for(int i=-2; i<2; i++) {
+//        for(int j=-2; j<2; j++) {
+//
+//            pixel_t *shadowPX = bmGetPixelAt(shadowMap, (unsigned int)iplShadowCoord.x+i, (unsigned int)iplShadowCoord.y+j);
+//            if(shadowPX && shadowPX->color.r < iplShadowCoord.z-bias) {
+//                hits += 1.0f;
+//            }
+//
+//            nTests += 1.0;
+//        }
+//    }
+//
+//
+//    float visibility = (1.0f - (hits / nTests)) * clamp(vecDot(&N, &L), 0.0, 1.0);
+//
+//
+//    pixel->color.r = visibility + 0.1f;
+//    pixel->color.g = visibility + 0.1f;
+//    pixel->color.b = visibility + 0.1f;
 
 
 }

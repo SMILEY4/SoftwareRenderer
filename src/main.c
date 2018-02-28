@@ -11,11 +11,11 @@
 #include "lodepng.h"
 
 #include "postProcess.h"
-#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <windows.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define toRadians(angleDegrees) ((angleDegrees) * M_PI / 180.0)
 #define toDegrees(angleRadians) ((angleRadians) * 180.0 / M_PI)
@@ -34,6 +34,7 @@ int nKeysDown = 0;
 // models
 model_t modelHead;
 model_t modelDiablo;
+model_t modelPlane;
 
 // cameras
 camera_t cameraMain;
@@ -48,9 +49,7 @@ vec_t lightpos;
 bool renderShadowmap;
 bitmap_t skybox;
 matrix_t biasMatrix;
-matrix_t depthMVP;
 matrix_t depthBiasMVP;
-matrix_t mvp;
 
 
 
@@ -59,41 +58,59 @@ matrix_t mvp;
 
 void create() {
 
-    // CREATE MODELS (HEAD)
-    obj_model_t obj_head;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_head);
-    char *texturesHead[5] = {
+    // CREATE MODELS
+    obj_model_t obj_plane;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane.obj", &obj_plane);
+    char *texturesPlane[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
     };
-    mdlCreateFromObj(&obj_head, &modelHead, texturesHead, 5, 1);
-    objFree(&obj_head);
+    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
+    objFree(&obj_plane);
 
-    modelHead.translation = (vec_t){ 0,   0,  0, 0};
-    modelHead.rotation =    (vec_t){ 0,   1,  0, 0};
-    modelHead.scale =       (vec_t){ 7,  -7,  7, 0};
-    mdlUpdateTransform(&modelHead);
+    modelPlane.translation = (vec_t){ 0,   0,  0, 0};
+    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
+    modelPlane.scale =       (vec_t){ 10,  1, 10, 0};
+    mdlUpdateTransform(&modelPlane);
 
-
-    obj_model_t ob_diablo;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
-    char *texturesDiablo[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
-    };
-    mdlCreateFromObj(&ob_diablo, &modelDiablo, texturesDiablo, 5, 1);
-    objFree(&ob_diablo);
-
-    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
-    modelDiablo.rotation =    (vec_t){ 0,   1,  0, 0};
-    modelDiablo.scale =       (vec_t){ 7,  -7,  7, 0};
-    mdlUpdateTransform(&modelDiablo);
+//
+//    obj_model_t obj_head;
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_head);
+//    char *texturesHead[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
+//    };
+//    mdlCreateFromObj(&obj_head, &modelHead, texturesHead, 5, 1);
+//    objFree(&obj_head);
+//
+//    modelHead.translation = (vec_t){ 0,   0,  0, 0};
+//    modelHead.rotation =    (vec_t){ 0,   1,  0, 0};
+//    modelHead.scale =       (vec_t){ 7,  -7,  7, 0};
+//    mdlUpdateTransform(&modelHead);
+//
+//
+//    obj_model_t ob_diablo;
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
+//    char *texturesDiablo[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+//    };
+//    mdlCreateFromObj(&ob_diablo, &modelDiablo, texturesDiablo, 5, 1);
+//    objFree(&ob_diablo);
+//
+//    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
+//    modelDiablo.rotation =    (vec_t){ 0,   1,  0, 0};
+//    modelDiablo.scale =       (vec_t){ 10,-10, 10, 0};
+//    mdlUpdateTransform(&modelDiablo);
 
 
     // SETUP SKYBOX
@@ -109,7 +126,7 @@ void create() {
 
     // LIGHT
     lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
-    camCreateFS(&camLight, 512, 512, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
+    camCreateFS(&camLight, 800, 800, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
 
 
     // MISC
@@ -125,33 +142,28 @@ void create() {
     // RENDER DATA
 
     // shadow pass
-    dataShadow.models = &modelHead;
     dataShadow.nModels = 1;
+    dataShadow.models = &modelDiablo;
     dataShadow.camera = &camLight;
-    dataShadow.cullingMode = 1;
+    dataShadow.cullingMode = 2;
     dataShadow.vsh = &shaderVertex_shadow;
     dataShadow.fsh = &shaderFragment_shadow;
-    dataShadow.nUniformVars = 2;
-    dataShadow.uniformVars = calloc((size_t)dataShadow.nUniformVars, sizeof(matrix_t));
-    dataShadow.uniformVars[0] = &depthMVP;
-    dataShadow.uniformVars[1] = &modelHead.modelTransform;
+    dataShadow.nUniformVars = 0;
 
 
     // main pass
-    dataMain.models = &modelHead;
     dataMain.nModels = 1;
+    dataMain.models = &modelDiablo;
     dataMain.camera = &cameraMain;
     dataMain.cullingMode = 1;
     dataMain.vsh = &shaderVertex_main;
     dataMain.fsh = &shaderFragment_main;
-    dataMain.nUniformVars = 6;
+    dataMain.nUniformVars = 4;
     dataMain.uniformVars = calloc((size_t)dataMain.nUniformVars, sizeof(matrix_t));
-    dataMain.uniformVars[0] = &mvp;
-    dataMain.uniformVars[1] = &modelHead.modelTransform;
-    dataMain.uniformVars[2] = &lightpos;
-    dataMain.uniformVars[3] = &dataShadow.camera->rendertargets[0];
-    dataMain.uniformVars[4] = &depthMVP;
-    dataMain.uniformVars[5] = &skybox;
+    dataMain.uniformVars[0] = &dataShadow.camera->rendertargets[0];
+    dataMain.uniformVars[1] = &skybox;
+    dataMain.uniformVars[2] = &camLight;
+    dataMain.uniformVars[3] = &depthMVP;
 
 }
 
@@ -175,7 +187,6 @@ void updateFunc(bitmap_t *displayBuffer) {
 
     // DRAW - SHADOW PASS
     if(renderShadowmap) {
-        matMul(&depthMVP, &camLight.viewProjection, &modelHead.modelTransform);
         matMul(&depthBiasMVP, &biasMatrix, &depthMVP);
         bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
         render(&dataShadow);
@@ -183,7 +194,6 @@ void updateFunc(bitmap_t *displayBuffer) {
     }
 
     // DRAW - MAIN PASS
-    matMul(&mvp, &cameraMain.viewProjection, &modelHead.modelTransform);
     render(&dataMain);
 
     // DRAW - PP-PASS

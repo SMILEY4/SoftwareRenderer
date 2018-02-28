@@ -5,8 +5,7 @@
 #include "objfile.h"
 #include "geometry.h"
 #include "bitmap.h"
-
-
+#include "camera.h"
 
 
 typedef struct triangle_t triangle_t;
@@ -35,7 +34,8 @@ struct model_t {
     vec_t translation, rotation, scale;
     matrix_t matTranslation, matRotation, matScale;
     matrix_t modelTransform;
-    
+    matrix_t mvp;
+
     triangle_t *triangles;
     unsigned int nTriangles;
     unsigned int nVertValuesVec3;
@@ -45,6 +45,8 @@ struct model_t {
 
 
 void mdlUpdateTransform(model_t *model);
+
+void mdlUpdateMVP(model_t *model, camera_t *camera);
 
 void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues);
 

@@ -14,21 +14,22 @@
 
 
 
-
-int cullBackface(vec_t A, vec_t B, vec_t C) {
+int cullBackface(vec_t *A, vec_t *B, vec_t *C) {
     vec_t triNormal;
     vec_t triAB, triAC;
-    vecSub(&triAB, &B, &A);
-    vecSub(&triAC, &C, &A);
+    vecSub(&triAB, B, A);
+    vecSub(&triAC, C, A);
     vecCross(&triNormal, &triAB, &triAC);
+    triNormal.w = 0.0f;
     vecNormalize(&triNormal, &triNormal);
-    float d = vecDot(&triNormal, &(vec_t){0, 0, 1});
+    float d = vecDot(&triNormal, &(vec_t){0.0f, 0.0f, 1.0f, 0.0f});
     if(d < 0) {
         return 1;
     } else {
         return 0;
     }
 }
+
 
 
 
@@ -71,9 +72,9 @@ void processPixel(renderdata_t *data, int indexModel, int x, int y, vertex_t ver
     }
 
     // fragment shader
-    data->fsh(data, indexModel, iplValues, model->nVertValuesVec3, pixel);
     pixel->color.a = 1.0;
     pixel->depth = iplPos.z;
+    data->fsh(data, indexModel, iplValues, model->nVertValuesVec3, pixel);
 
     free(iplValues);
 
@@ -179,11 +180,19 @@ void processVertices(renderdata_t *data, int indexModel) {
         memcpy(vertexV1.valuesVec3, vertexT1.valuesVec3, sizeof(vec_t)*nValuesVec3);
         memcpy(vertexV2.valuesVec3, vertexT2.valuesVec3, sizeof(vec_t)*nValuesVec3);
 
+        vecPrint(&vertexV0.valuesVec3[0], "T0");
+        vecPrint(&vertexV1.valuesVec3[0], "T1");
+        vecPrint(&vertexV2.valuesVec3[0], "T2");
 
         // VERTEX PROCESSING
         data->vsh(data, indexModel, &vertexT0, &vertexV0);
         data->vsh(data, indexModel, &vertexT1, &vertexV1);
         data->vsh(data, indexModel, &vertexT2, &vertexV2);
+
+
+        vecPrint(&vertexV0.valuesVec3[0], "V0");
+        vecPrint(&vertexV1.valuesVec3[0], "V1");
+        vecPrint(&vertexV2.valuesVec3[0], "V2");
 
         // VERTEX POST PROCESSING
         memcpy(vertexS0.valuesVec3, vertexV0.valuesVec3, sizeof(vec_t)*nValuesVec3);
@@ -197,7 +206,6 @@ void processVertices(renderdata_t *data, int indexModel) {
         vecPerspectiveDivide(&vertexS0.valuesVec3[0], &vertexS0.valuesVec3[0]);
         vecPerspectiveDivide(&vertexS1.valuesVec3[0], &vertexS1.valuesVec3[0]);
         vecPerspectiveDivide(&vertexS2.valuesVec3[0], &vertexS2.valuesVec3[0]);
-
 
 
         float zNear = data->camera->zNear;
@@ -215,17 +223,16 @@ void processVertices(renderdata_t *data, int indexModel) {
         if( vertexS1.valuesVec3[0].x < 0 || vertexS1.valuesVec3[0].x >= w || vertexS1.valuesVec3[0].y < 0 || vertexS1.valuesVec3[0].y >= h ) { nOutside++; }
         if( vertexS2.valuesVec3[0].x < 0 || vertexS2.valuesVec3[0].x >= w || vertexS2.valuesVec3[0].y < 0 || vertexS2.valuesVec3[0].y >= h ) { nOutside++; }
 
+
         int cullBF = 0;
         if(data->cullingMode == 1) { // backface
-            cullBF = cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]);
+            cullBF = cullBackface(&vertexS0.valuesVec3[0], &vertexS1.valuesVec3[0], &vertexS2.valuesVec3[0]);
         } else {
-            cullBF = cullBackface(vertexS0.valuesVec3[0], vertexS1.valuesVec3[0], vertexS2.valuesVec3[0]) == 0 ? 1 : 0;
+            cullBF = cullBackface(&vertexS0.valuesVec3[0], &vertexS1.valuesVec3[0], &vertexS2.valuesVec3[0]) == 0 ? 1 : 0;
         }
-
         if(nOutside == 3 || cullBF) {
-           continue;
+            continue;
         }
-
 
         // START RASTERIZER
         vertex_t vertices[3] = {vertexS0, vertexS1, vertexS2};
@@ -249,6 +256,7 @@ void processVertices(renderdata_t *data, int indexModel) {
 
 void render(renderdata_t *data) {
     for(int i=0; i<data->nModels; i++) {
+        mdlUpdateMVP(&data->models[i], data->camera);
         processVertices(data, i);
     }
 }

@@ -16,6 +16,13 @@ void mdlUpdateTransform(model_t *model) {
 
 
 
+void mdlUpdateMVP(model_t *model, camera_t *camera) {
+    matMul(&model->mvp, &camera->viewProjection, &model->modelTransform);
+}
+
+
+
+
 void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues) {
     if(!objmodel) {
         return;
