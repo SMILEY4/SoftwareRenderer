@@ -15,6 +15,7 @@ struct renderdata_t {
 
     camera_t *camera;
 
+    void (*osh)(renderdata_t*, model_t *model);
     void (*vsh)(renderdata_t*, int indexModel, vertex_t*, vertex_t*);
     void (*fsh)(renderdata_t*, int indexModel, vec_t*, int, pixel_t*);
 

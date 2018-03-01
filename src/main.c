@@ -45,11 +45,10 @@ renderdata_t dataShadow;
 renderdata_t dataMain;
 
 // misc
+matrix_t mvpLight;
 vec_t lightpos;
 bool renderShadowmap;
 bitmap_t skybox;
-matrix_t biasMatrix;
-matrix_t depthBiasMVP;
 
 
 
@@ -59,22 +58,22 @@ matrix_t depthBiasMVP;
 void create() {
 
     // CREATE MODELS
-    obj_model_t obj_plane;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane.obj", &obj_plane);
-    char *texturesPlane[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
-    };
-    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
-    objFree(&obj_plane);
-
-    modelPlane.translation = (vec_t){ 0,   0,  0, 0};
-    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
-    modelPlane.scale =       (vec_t){ 10,  1, 10, 0};
-    mdlUpdateTransform(&modelPlane);
+//    obj_model_t obj_plane;
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane.obj", &obj_plane);
+//    char *texturesPlane[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
+//    };
+//    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
+//    objFree(&obj_plane);
+//
+//    modelPlane.translation = (vec_t){ 0,   0,  0, 0};
+//    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
+//    modelPlane.scale =       (vec_t){ 10,  1, 10, 0};
+//    mdlUpdateTransform(&modelPlane);
 
 //
 //    obj_model_t obj_head;
@@ -95,22 +94,22 @@ void create() {
 //    mdlUpdateTransform(&modelHead);
 //
 //
-//    obj_model_t ob_diablo;
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
-//    char *texturesDiablo[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
-//    };
-//    mdlCreateFromObj(&ob_diablo, &modelDiablo, texturesDiablo, 5, 1);
-//    objFree(&ob_diablo);
-//
-//    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
-//    modelDiablo.rotation =    (vec_t){ 0,   1,  0, 0};
-//    modelDiablo.scale =       (vec_t){ 10,-10, 10, 0};
-//    mdlUpdateTransform(&modelDiablo);
+    obj_model_t ob_diablo;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &ob_diablo);
+    char *texturesDiablo[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+    };
+    mdlCreateFromObj(&ob_diablo, &modelDiablo, texturesDiablo, 5, 1);
+    objFree(&ob_diablo);
+
+    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
+    modelDiablo.rotation =    (vec_t){ 0,   1,  0, 0};
+    modelDiablo.scale =       (vec_t){ 10,-10, 10, 0};
+    mdlUpdateTransform(&modelDiablo);
 
 
     // SETUP SKYBOX
@@ -131,13 +130,7 @@ void create() {
 
     // MISC
     renderShadowmap = true;
-    biasMatrix = (matrix_t) {
-            0.5f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.5f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.5f, 0.0f,
-            0.5f, 0.5f, 0.5f, 1.0f
-    };
-
+    matSetIdentity(&mvpLight);
 
     // RENDER DATA
 
@@ -146,9 +139,11 @@ void create() {
     dataShadow.models = &modelDiablo;
     dataShadow.camera = &camLight;
     dataShadow.cullingMode = 2;
+    dataShadow.osh = &shaderObject_shadow;
     dataShadow.vsh = &shaderVertex_shadow;
     dataShadow.fsh = &shaderFragment_shadow;
     dataShadow.nUniformVars = 0;
+
 
 
     // main pass
@@ -156,14 +151,15 @@ void create() {
     dataMain.models = &modelDiablo;
     dataMain.camera = &cameraMain;
     dataMain.cullingMode = 1;
+    dataMain.osh = &shaderObject_main;
     dataMain.vsh = &shaderVertex_main;
     dataMain.fsh = &shaderFragment_main;
     dataMain.nUniformVars = 4;
-    dataMain.uniformVars = calloc((size_t)dataMain.nUniformVars, sizeof(matrix_t));
-    dataMain.uniformVars[0] = &dataShadow.camera->rendertargets[0];
+    dataMain.uniformVars = calloc(dataMain.nUniformVars, sizeof(void*) );
+    dataMain.uniformVars[0] = &skybox; // unused (use for envmap ?)
     dataMain.uniformVars[1] = &skybox;
     dataMain.uniformVars[2] = &camLight;
-    dataMain.uniformVars[3] = &depthMVP;
+    dataMain.uniformVars[3] = &mvpLight;
 
 }
 
@@ -187,7 +183,6 @@ void updateFunc(bitmap_t *displayBuffer) {
 
     // DRAW - SHADOW PASS
     if(renderShadowmap) {
-        matMul(&depthBiasMVP, &biasMatrix, &depthMVP);
         bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
         render(&dataShadow);
         renderShadowmap = false;
@@ -294,6 +289,9 @@ void exitFunc() {
     watchFreeData();
     mdlFreeModel(&modelHead);
     mdlFreeModel(&modelDiablo);
+    mdlFreeModel(&modelPlane);
+    bmDispose(&skybox);
+    bmDispose(camLight.rendertargets);
     free(dataMain.uniformVars);
     free(dataShadow.uniformVars);
 }

@@ -11,10 +11,19 @@
 
 
 
+void shaderObject_shadow(renderdata_t *data, model_t *model) {
+    mdlUpdateMVP(model, data->camera);
+}
+
+
+
+
 void shaderVertex_shadow(renderdata_t *data, int indexModel, vertex_t *vertexIn, vertex_t *vertexOut) {
     matrix_t mvp = data->models[indexModel].mvp;
     matTransform(&vertexOut->valuesVec3[0], &vertexIn->valuesVec3[0], &mvp);
 }
+
+
 
 
 void shaderFragment_shadow(renderdata_t *data, int indexModel, vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel) {
@@ -31,22 +40,37 @@ void shaderFragment_shadow(renderdata_t *data, int indexModel, vec_t *iplVertexV
 
 
 
+void shaderObject_main(renderdata_t *data, model_t *model) {
+    mdlUpdateMVP(model, data->camera);
+
+    camera_t *lightCam = (camera_t*)(data->uniformVars[2]);
+    matrix_t *lightMVP = (matrix_t*)(data->uniformVars[3]);
+    matMul(lightMVP, &lightCam->viewProjection, &model->modelTransform);
+}
+
+
+
+
 void shaderVertex_main(renderdata_t *data, int indexModel, vertex_t *vertexIn, vertex_t *vertexOut) {
     void **uniformVars = data->uniformVars;
     matrix_t *nrmTransform = &data->models[indexModel].modelTransform;
-    matrix_t *mvpShadow = (matrix_t*)(*(uniformVars+3));
+    matrix_t *mvpLight = (matrix_t*)(*(uniformVars+3));
     camera_t *camLight = (camera_t*)(*(uniformVars+2));
+
 
     // vertex
     matrix_t *mvp = &data->models[indexModel].mvp;
     matTransform(&vertexOut->valuesVec3[0], &vertexIn->valuesVec3[0], mvp);
 
     // vertex (shadow)
-    matTransform(&vertexOut->valuesVec3[3], &vertexIn->valuesVec3[0], mvpShadow);
+    matTransform(&vertexOut->valuesVec3[3], &vertexIn->valuesVec3[0], mvpLight);
     float z = -vertexOut->valuesVec3[3].z;
+
     static matrix_t screenSpaceTransform;
     matSetScreenSpaceTransform(&screenSpaceTransform, (float)camLight->rendertargets[0].width/2.0f, (float)camLight->rendertargets[0].height/2.0f);
+
     matTransform(&vertexOut->valuesVec3[3], &vertexOut->valuesVec3[3], &screenSpaceTransform);
+
     vecPerspectiveDivide(&vertexOut->valuesVec3[3], &vertexOut->valuesVec3[3]);
     vertexOut->valuesVec3[3].z = (z-camLight->zNear)/(camLight->zFar-camLight->zNear);
 
@@ -64,12 +88,14 @@ float clamp(float x, float a, float b) {
 
 
 
+
 void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexValuesVec3, int nVertexValuesVec3, pixel_t *pixel) {
 
     void **uniformVars = data->uniformVars;
     bitmap_t *renderTargets = data->camera->rendertargets;
     matrix_t *nrmTransform = &data->models[indexModel].modelTransform;
-    bitmap_t *shadowMap = (bitmap_t*)(*(uniformVars));
+    camera_t *lightCam = (camera_t*)(*(uniformVars+2));
+    bitmap_t *shadowMap = &lightCam->rendertargets[0];
     bitmap_t *skybox = (bitmap_t*)(*(uniformVars+1));
 
 
@@ -123,7 +149,9 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
     if(shadowPX && shadowPX->color.r < iplShadowCoord.z-bias) {
         visibility = 0.0;
     }
-
+    if(vecDot(&N, &L) < 0) {
+        visibility = 0.0;
+    }
 
 
     // blinn shading
@@ -155,7 +183,7 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
 //    pixel->color.r = visibility + 0.1f;
 //    pixel->color.g = visibility + 0.1f;
 //    pixel->color.b = visibility + 0.1f;
-
+//
 
 
 //

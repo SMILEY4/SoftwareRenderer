@@ -165,11 +165,11 @@ void processVertices(renderdata_t *data, int indexModel) {
     matrix_t screenSpaceTransform;
     matSetScreenSpaceTransform(&screenSpaceTransform, data->camera->rendertargets[0].width/2, data->camera->rendertargets[0].height/2);
 
+
     // for each triangle
     const unsigned int nTriangles = data->models[indexModel].nTriangles;
     for(int i=nTriangles; i>0; i--) {
         triangle_t *triangle = data->models[indexModel].triangles + (i-1);
-
 
         // VERTEX SPECIFICATION
         vertex_t vertexT0 = triangle->vertices[0];
@@ -180,19 +180,10 @@ void processVertices(renderdata_t *data, int indexModel) {
         memcpy(vertexV1.valuesVec3, vertexT1.valuesVec3, sizeof(vec_t)*nValuesVec3);
         memcpy(vertexV2.valuesVec3, vertexT2.valuesVec3, sizeof(vec_t)*nValuesVec3);
 
-        vecPrint(&vertexV0.valuesVec3[0], "T0");
-        vecPrint(&vertexV1.valuesVec3[0], "T1");
-        vecPrint(&vertexV2.valuesVec3[0], "T2");
-
         // VERTEX PROCESSING
         data->vsh(data, indexModel, &vertexT0, &vertexV0);
         data->vsh(data, indexModel, &vertexT1, &vertexV1);
         data->vsh(data, indexModel, &vertexT2, &vertexV2);
-
-
-        vecPrint(&vertexV0.valuesVec3[0], "V0");
-        vecPrint(&vertexV1.valuesVec3[0], "V1");
-        vecPrint(&vertexV2.valuesVec3[0], "V2");
 
         // VERTEX POST PROCESSING
         memcpy(vertexS0.valuesVec3, vertexV0.valuesVec3, sizeof(vec_t)*nValuesVec3);
@@ -256,7 +247,7 @@ void processVertices(renderdata_t *data, int indexModel) {
 
 void render(renderdata_t *data) {
     for(int i=0; i<data->nModels; i++) {
-        mdlUpdateMVP(&data->models[i], data->camera);
+        data->osh(data, data->models+i);
         processVertices(data, i);
     }
 }
