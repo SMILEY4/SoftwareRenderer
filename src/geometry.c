@@ -392,10 +392,6 @@ float matDet(matrix_t *mat) {
 }
 
 
-void matInv(matrix_t *dst, matrix_t *src) {
-}
-
-
 
 
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat) {

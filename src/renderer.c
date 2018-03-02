@@ -48,7 +48,7 @@ void processPixel(renderdata_t *data, int indexModel, int x, int y, vertex_t ver
     // get pixel and barycentric coordinates
     vec_t pxCoords = {x+0.5f, y+0.5f, 0};
     vec_t baryCoords;
-    barycentric(&baryCoords, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &pxCoords);
+    barycentric(&baryCoords, &vertices[0].valuesVec3[0], &vertices[1].valuesVec3[0], &vertices[2].valuesVec3[0], &pxCoords); // TODO use persp.corr. barycoords -> ...valuesVec3[x]: use world pos instead
 
     // interpolate position
     vec_t iplPos;
@@ -61,7 +61,8 @@ void processPixel(renderdata_t *data, int indexModel, int x, int y, vertex_t ver
 
     // interpolate other vertex values
     vec_t *iplValues = calloc((size_t)model->nVertValuesVec3, sizeof(vec_t));
-    iplValues[0] = iplPos;
+    //iplValues[0] = iplPos; // TODO: keep bary instead of pos ?
+    iplValues[0] = baryCoords;
     for(int i=1; i<model->nVertValuesVec3; i++) {
         vec_t in0 = vertices[0].valuesVec3[i];
         vec_t in1 = vertices[1].valuesVec3[i];

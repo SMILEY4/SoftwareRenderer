@@ -100,16 +100,18 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
 
 
     // get interpolated values
-    vec_t iplPos = iplVertexValuesVec3[0];
-    vec_t iplUV = iplVertexValuesVec3[1];
-    vec_t iplNormal = iplVertexValuesVec3[2];
-    vec_t iplShadowCoord = iplVertexValuesVec3[3];
+    //vec_t iplPos =          iplVertexValuesVec3[0];
+    vec_t baryCoords =      iplVertexValuesVec3[0];
+    vec_t iplUV =           iplVertexValuesVec3[1];
+    vec_t iplNormal =       iplVertexValuesVec3[2];
+    vec_t iplShadowCoord =  iplVertexValuesVec3[3];
     vecNormalize(&iplNormal, &iplNormal);
 
 
 
 
-    vec_t L = {-0.888565f, -0.438497f, -0.134805f};
+    vec_t L = {lightCam->pos.x, lightCam->pos.y, lightCam->pos.z, 0.0f};
+    vecNormalize(&L, &L);
     vec_t V = {data->camera->pos.x, data->camera->pos.y, data->camera->pos.z, 0.0};  vecNormalize(&V, &V);
 
     // pos mapping
@@ -142,6 +144,10 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
     float visibility = 1.0;
 
     float cosTheta = vecDot(&N, &L);
+    if(indexModel == 0) { // model normals wrong
+        cosTheta = -cosTheta;
+    }
+
     float bias = fmaxf(0.05f * (1.0f - cosTheta), 0.005f);
     bias = clamp(bias, 0.0f, 0.01f);
 
@@ -149,41 +155,42 @@ void shaderFragment_main(renderdata_t *data, int indexModel, vec_t *iplVertexVal
     if(shadowPX && shadowPX->color.r < iplShadowCoord.z-bias) {
         visibility = 0.0;
     }
-    if(vecDot(&N, &L) < 0) {
+    if(!shadowPX) {
+        visibility = 1.0;
+    }
+    if(cosTheta < 0) {
         visibility = 0.0;
     }
 
+    pixel->color.r = baryCoords.x;
+    pixel->color.g = baryCoords.y;
+    pixel->color.b = baryCoords.z;
 
-    // blinn shading
-    vec_t ambient = {0.2f, 0.2f, 0.27f, 0.0f};
-    vec_t lightColor = {1.0f, 1.0f, 1.0f, 1.2f};
-
-    pixel_t *pxDiffuse = bmGetPixelUV(&data->models[indexModel].textures[0], iplUV.x, iplUV.y);
-
-    float lambertian = fmaxf(vecDot(&N, &L), 0.0f);
-    float specular = 0.0f;
-
-
-    specular *= visibility;
-    lambertian *= visibility;
-
-    vec_t finalColor = {
-            ambient.x * pxDiffuse->color.r  +  pxDiffuse->color.r * lambertian * lightColor.x*lightColor.w  +  specular * lightColor.x*lightColor.w,
-            ambient.y * pxDiffuse->color.r  +  pxDiffuse->color.g * lambertian * lightColor.y*lightColor.w  +  specular * lightColor.y*lightColor.w,
-            ambient.z * pxDiffuse->color.r  +  pxDiffuse->color.b * lambertian * lightColor.z*lightColor.w  +  specular * lightColor.z*lightColor.w,
-            0.0f
-    };
-
-
-    // final color
-    pixel->color.r = finalColor.x;
-    pixel->color.g = finalColor.y;
-    pixel->color.b = finalColor.z;
-
-//    pixel->color.r = visibility + 0.1f;
-//    pixel->color.g = visibility + 0.1f;
-//    pixel->color.b = visibility + 0.1f;
+//    // blinn shading
+//    vec_t ambient = {0.2f, 0.2f, 0.27f, 0.0f};
+//    vec_t lightColor = {1.0f, 1.0f, 1.0f, 1.2f};
 //
+//    pixel_t *pxDiffuse = bmGetPixelUV(&data->models[indexModel].textures[0], iplUV.x, iplUV.y);
+//
+//    float lambertian = fmaxf(vecDot(&N, &L), 0.0f);
+//    float specular = 0.0f;
+//
+//
+//    specular *= visibility;
+//    lambertian *= visibility;
+//
+//    vec_t finalColor = {
+//            ambient.x * pxDiffuse->color.r  +  pxDiffuse->color.r * lambertian * lightColor.x*lightColor.w  +  specular * lightColor.x*lightColor.w,
+//            ambient.y * pxDiffuse->color.r  +  pxDiffuse->color.g * lambertian * lightColor.y*lightColor.w  +  specular * lightColor.y*lightColor.w,
+//            ambient.z * pxDiffuse->color.r  +  pxDiffuse->color.b * lambertian * lightColor.z*lightColor.w  +  specular * lightColor.z*lightColor.w,
+//            0.0f
+//    };
+//
+//
+//    // final color
+//    pixel->color.r = finalColor.x;
+//    pixel->color.g = finalColor.y;
+//    pixel->color.b = finalColor.z;
 
 
 //

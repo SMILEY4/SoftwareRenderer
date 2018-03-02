@@ -58,22 +58,22 @@ bitmap_t skybox;
 void create() {
 
     // CREATE MODELS
-//    obj_model_t obj_plane;
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane.obj", &obj_plane);
-//    char *texturesPlane[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
-//    };
-//    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
-//    objFree(&obj_plane);
-//
-//    modelPlane.translation = (vec_t){ 0,   0,  0, 0};
-//    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
-//    modelPlane.scale =       (vec_t){ 10,  1, 10, 0};
-//    mdlUpdateTransform(&modelPlane);
+    obj_model_t obj_plane;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_plane);
+    char *texturesPlane[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
+    };
+    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
+    objFree(&obj_plane);
+
+    modelPlane.translation = (vec_t){ 0,   10,  0, 0};
+    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
+    modelPlane.scale =       (vec_t){ 15,  1, 15, 0};
+    mdlUpdateTransform(&modelPlane);
 
 //
 //    obj_model_t obj_head;
@@ -125,7 +125,7 @@ void create() {
 
     // LIGHT
     lightpos = (vec_t){-15.775871f, -7.742854f, -2.031374f, 1.0000f};
-    camCreateFS(&camLight, 800, 800, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
+    camCreateFS(&camLight, 500, 500, 1, 70, 0.1f, 100.0f, lightpos, camTgt, camUp);
 
 
     // MISC
@@ -135,20 +135,25 @@ void create() {
     // RENDER DATA
 
     // shadow pass
-    dataShadow.nModels = 1;
-    dataShadow.models = &modelDiablo;
+    dataShadow.nModels = 2;
+    dataShadow.models = calloc(dataShadow.nModels, sizeof(model_t));
+    dataShadow.models[0] = modelPlane;
+    dataShadow.models[1] = modelDiablo;
     dataShadow.camera = &camLight;
-    dataShadow.cullingMode = 2;
+    dataShadow.cullingMode = 1;
     dataShadow.osh = &shaderObject_shadow;
     dataShadow.vsh = &shaderVertex_shadow;
     dataShadow.fsh = &shaderFragment_shadow;
     dataShadow.nUniformVars = 0;
+    //dataMain.uniformVars = calloc(dataShadow.nUniformVars, sizeof(void*) );
 
 
 
     // main pass
-    dataMain.nModels = 1;
-    dataMain.models = &modelDiablo;
+    dataMain.nModels = 2;
+    dataMain.models = calloc(dataMain.nModels, sizeof(model_t));
+    dataMain.models[0] = modelPlane;
+    dataMain.models[1] = modelDiablo;
     dataMain.camera = &cameraMain;
     dataMain.cullingMode = 1;
     dataMain.osh = &shaderObject_main;
@@ -183,7 +188,7 @@ void updateFunc(bitmap_t *displayBuffer) {
 
     // DRAW - SHADOW PASS
     if(renderShadowmap) {
-        bmClear(&camLight.rendertargets[0], &(color_t){0.1f, 0.1f, 0.1f, 0.0f});
+        bmClear(&camLight.rendertargets[0], &(color_t){1.0f, 1.0f, 1.0f, 0.0f});
         render(&dataShadow);
         renderShadowmap = false;
     }
@@ -193,6 +198,9 @@ void updateFunc(bitmap_t *displayBuffer) {
 
     // DRAW - PP-PASS
     //ppAmbientOcclusion(displayBuffer);
+
+
+//    bmDrawTo(displayBuffer, &dataShadow.camera->rendertargets[0]);
 
 
     // SWITCH RESOLUTION
