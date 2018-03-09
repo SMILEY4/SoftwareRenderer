@@ -1,19 +1,14 @@
 #ifndef SOFTWARERENDERER_BITMAP_H
 #define SOFTWARERENDERER_BITMAP_H
 
-#include "geometry.h"
 #include <stdbool.h>
 
 
 typedef struct {
-    float r, g, b, a;
-} color_t;
-
-
-typedef struct {
-    color_t color;
-    float depth;
-    unsigned int x, y;
+    float r;
+    float g;
+    float b;
+    float a;
 } pixel_t;
 
 
@@ -28,15 +23,15 @@ typedef struct {
 
 
 
+void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b);
+
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y);
 
 pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v);
 
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
-void bmDrawTo(bitmap_t *target, bitmap_t *img);
-
-void bmClear(bitmap_t *bitmap, color_t *color);
+void bmClear(bitmap_t *bitmap, float r, float g, float b);
 
 void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);
 

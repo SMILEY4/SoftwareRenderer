@@ -125,3 +125,6 @@ void camMove(camera_t *cam, int dir, double amt) {
 
     camUpdate(cam);
 }
+
+
+

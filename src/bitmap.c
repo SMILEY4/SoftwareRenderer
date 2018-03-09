@@ -1,8 +1,24 @@
 #include "bitmap.h"
 #include "lodepng.h"
 #include <windows.h>
-#include <stdbool.h>
 #include <stdio.h>
+#include <float.h>
+
+
+
+
+void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b) {
+    if(x < 0) { return; }
+    if(x >= bitmap->width) { return; }
+    if(y < 0) { return; }
+    if(y >= bitmap->height) { return; }
+
+    pixel_t *pixel = bitmap->pixels + (bitmap->width*y + x);
+    pixel->r = r;
+    pixel->g = g;
+    pixel->b = b;
+}
+
 
 
 
@@ -38,11 +54,9 @@ void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
         for(int x=0; x<dst->width; x++) {
             pixel_t *dstPixel = bmGetPixelAt(dst, x, y);
             pixel_t *srcPixel = bmGetPixelAt(src, x, y);
-            dstPixel->color.r = srcPixel->color.r;
-            dstPixel->color.g = srcPixel->color.g;
-            dstPixel->color.b = srcPixel->color.b;
-            dstPixel->color.a = srcPixel->color.a;
-            dstPixel->depth = srcPixel->depth;
+            dstPixel->r = srcPixel->r;
+            dstPixel->g = srcPixel->g;
+            dstPixel->b = srcPixel->b;
         }
     }
 }
@@ -59,11 +73,9 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img) {
         for(int y=0; y<h; y++) {
             pixel_t *tgtPixel = bmGetPixelAt(target, x, y);
             pixel_t *imgPixel = bmGetPixelAt(img, x, y);
-            tgtPixel->color.r = imgPixel->color.r;
-            tgtPixel->color.g = imgPixel->color.g;
-            tgtPixel->color.b = imgPixel->color.b;
-            tgtPixel->color.a = imgPixel->color.a;
-            tgtPixel->depth = imgPixel->depth;
+            tgtPixel->r = imgPixel->r;
+            tgtPixel->g = imgPixel->g;
+            tgtPixel->b = imgPixel->b;
         }
     }
 
@@ -72,15 +84,13 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img) {
 
 
 
-void bmClear(bitmap_t *bitmap, color_t *color) {
+void bmClear(bitmap_t *bitmap, float r, float g, float b) {
     for(int y=0; y<bitmap->height; y++) {
         for(int x=0; x<bitmap->width; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            pixel->color.r = color->r;
-            pixel->color.g = color->g;
-            pixel->color.b = color->b;
-            pixel->color.a = color->a;
-            pixel->depth = 1.0;
+            pixel->r = r;
+            pixel->g = g;
+            pixel->b = b;
         }
     }
 }
@@ -97,7 +107,7 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     for(unsigned int y=0; y<bitmap->height; y++) {
         for(unsigned int x=0; x<bitmap->width; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f,  1.0f,  x, y};
+            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f};
         }
     }
 }
@@ -126,16 +136,15 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
     for(unsigned int y=0; y<h; y++) {
         for (unsigned int x=0; x<w; x++) {
             pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
-            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f,  1.0f,  x, y};
+            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f};
             if(pixel) {
                 int r = (int)(image[4 * y * w + 4 * x + 0]);
                 int g = (int)(image[4 * y * w + 4 * x + 1]);
                 int b = (int)(image[4 * y * w + 4 * x + 2]);
                 int a = (int)(image[4 * y * w + 4 * x + 3]);
-                pixel->color.r = (float)r / 255.0f;
-                pixel->color.g = (float)g / 255.0f;
-                pixel->color.b = (float)b / 255.0f;
-                pixel->color.a = (float)a / 255.0f;
+                pixel->r = (float)r / 255.0f;
+                pixel->g = (float)g / 255.0f;
+                pixel->b = (float)b / 255.0f;
             }
         }
     }

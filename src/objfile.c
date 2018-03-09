@@ -11,10 +11,10 @@ bool firstPass(FILE *fp, obj_model_t *model) {
         return false;
     }
 
-    int nVertices = 0;
-    int nTexCoords = 0;
-    int nNormals = 0;
-    int nFaces = 0;
+    unsigned int nVertices = 0;
+    unsigned int nTexCoords = 0;
+    unsigned int nNormals = 0;
+    unsigned int nFaces = 0;
 
     char buf[256];
     while(fgets(buf, sizeof(buf), fp) != NULL) {
@@ -128,7 +128,8 @@ bool secondPass(FILE *fp, obj_model_t *model) {
 
             } else if (buf[1] == 't') {
                 // TEXCOORD
-                sscanf(buf+2, "%f %f %f", &ptex->u, &ptex->v, &ptex->w);
+//                sscanf(buf+2, "%f %f %f", &ptex->u, &ptex->v, &ptex->w);
+                sscanf(buf+2, "%f %f", &ptex->u, &ptex->v);
                 ptex++;
 
             } else if (buf[1] == 'n') {

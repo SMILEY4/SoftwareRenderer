@@ -1,6 +1,5 @@
 #include "bresenham.h"
 #include "bitmap.h"
-#include "geometry.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -53,7 +52,7 @@ void bhDrawLineToScanbuffer(int *scanbufferMin, int *scanbufferMax, int scanbuff
 
 
 
-void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color) {
+void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float g, float b) {
     if(!bitmap) {
         return;
     }
@@ -78,10 +77,10 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color)
 
         pixel_t *pixel = bmGetPixelAt(bitmap, currentX, currentY);
         if(pixel) {
-            pixel->color.r = color.r * color.a;
-            pixel->color.g = color.g * color.a;
-            pixel->color.b = color.b * color.a;
-            pixel->color.a = 1.0;
+            pixel->r = r;
+            pixel->g = g;
+            pixel->b = b;
+            pixel->a = 1.0;
         }
 
         if(currentX == x1 && currentY == y1) {
@@ -101,11 +100,3 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, color_t color)
 
 }
 
-
-
-
-void bhDrawTriangle(bitmap_t *bitmap, int ax, int ay, int bx, int by, int cx, int cy, color_t ca, color_t cb, color_t cc) {
-    bhDrawLine(bitmap, ax, ay, bx, by, ca);
-    bhDrawLine(bitmap, bx, by, cx, cy, cb);
-    bhDrawLine(bitmap, cx, cy, ax, ay, cc);
-}

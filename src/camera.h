@@ -39,5 +39,10 @@ void camUpdate(camera_t *cam);
 
 void camMove(camera_t *cam, int dir, double amt);
 
+void camView2ScreenSpace(camera_t *camera, vec_t *vecIn, vec_t *vecOut);
+
+void camScreen2ViewSpace(camera_t *camera, vec_t *vecIn, vec_t *vecOut);
+
+
 
 #endif
