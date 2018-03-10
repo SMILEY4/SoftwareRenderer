@@ -4,6 +4,6 @@
 #include "camera.h"
 #include "model.h"
 
-void rcDrawModelWireframe(camera_t *camera, model_t *model);
+void rcDrawModel(camera_t *camera, model_t *model);
 
 #endif

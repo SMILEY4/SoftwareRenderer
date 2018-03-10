@@ -18,6 +18,7 @@ struct vertex_t {
     vec_t position;
     vec_t normal;
     vec_t texCoord;
+    vec_t color;
 };
 
 

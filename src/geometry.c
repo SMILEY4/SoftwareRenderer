@@ -166,7 +166,8 @@ void vecPerspectiveDivide(vec_t *dst, vec_t *src) {
     dst->x = src->x / src->w;
     dst->y = src->y / src->w;
     dst->z = src->z / src->w;
-    dst->w = src->w / src->w;
+    dst->w = src->w;
+//    dst->w = src->w / src->w;
 }
 
 
@@ -453,7 +454,6 @@ void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up) {
 
 
 void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
-
     vec_t V1, V2, Q;
     vecSub(&V1, B, A);
     vecSub(&V2, C, A);
@@ -463,3 +463,10 @@ void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
     dst->x = 1.0f - dst->y -  dst->z;
 }
 
+
+void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords) {
+    dst->x = A->x * baryCoords->x  +  B->x * baryCoords->y  +  C->x * baryCoords->z;
+    dst->y = A->y * baryCoords->x  +  B->y * baryCoords->y  +  C->y * baryCoords->z;
+    dst->z = A->z * baryCoords->x  +  B->z * baryCoords->y  +  C->z * baryCoords->z;
+    dst->w = A->w * baryCoords->x  +  B->w * baryCoords->y  +  C->w * baryCoords->z;
+}

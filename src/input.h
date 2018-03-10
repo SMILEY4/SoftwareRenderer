@@ -17,7 +17,7 @@ void inUpdate();
 
 int inGetKeyState(unsigned char key);
 
-int inGetKeyY(unsigned char key);
+int inGetKeyX(unsigned char key);
 
 int inGetKeyY(unsigned char key);
 

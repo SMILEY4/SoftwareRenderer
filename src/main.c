@@ -2,6 +2,8 @@
 #include "input.h"
 #include "rendercontext.h"
 #include "objfile.h"
+#include "camera.h"
+#include "bitmap.h"
 #include <stdio.h>
 
 #define WIDTH 800
@@ -16,8 +18,9 @@ void create() {
 
     // MODEL
     obj_model_t obj_diablo;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
     char *texturesDiablo[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
@@ -28,8 +31,8 @@ void create() {
     mdlCreateFromObj(&obj_diablo, &model, texturesDiablo, 5, 1);
     objFree(&obj_diablo);
 
-    model.translation = (vec_t){ 0,   0,  0, 0};
-    model.rotation =    (vec_t){ 0,   1,  0, 0};
+    model.translation = (vec_t){ 0,   -5,  0, 0};
+    model.rotation =    (vec_t){ 0,   0,  0, 0};
     model.scale =       (vec_t){ 10, 10, 10, 0};
     mdlUpdateTransform(&model);
 
@@ -57,7 +60,25 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(inGetKeyState('e') == IN_DOWN) { camMove(&camera, 2, -camSpeed); }
     camSetRendertargetEXT(&camera, displayBuffer, 1);
 
-    rcDrawModelWireframe(&camera, &model);
+    rcDrawModel(&camera, &model);
+
+    if(inGetKeyState('i') == IN_RELEASED) {
+        int mx = inGetKeyX('i');
+        int my = inGetKeyY('i');
+        pixel_t *pixel = bmGetPixelAt(displayBuffer, mx, my);
+        if(pixel) {
+            printf("============\n");
+            printf("pick at %d %d\n", mx, my);
+            printf("color = %f %f %f %f\n", pixel->r, pixel->g, pixel->b, pixel->a);
+            printf("depth = %f\n", pixel->z);
+            printf("============\n");
+        } else {
+            printf("Failed: Out-of-bounds !");
+        }
+
+    }
+
+
 }
 
 

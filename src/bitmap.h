@@ -9,6 +9,7 @@ typedef struct {
     float g;
     float b;
     float a;
+    float z;
 } pixel_t;
 
 

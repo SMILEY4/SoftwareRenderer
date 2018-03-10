@@ -2,6 +2,7 @@
 #include "objfile.h"
 #include "bitmap.h"
 #include <windows.h>
+#include <math.h>
 
 
 
@@ -11,7 +12,6 @@ void mdlUpdateTransform(model_t *model) {
     matSetScale(&model->matScale, model->scale.x, model->scale.y, model->scale.z);
     matMul3(&model->modelTransform, &model->matTranslation, &model->matRotation, &model->matScale);
 }
-
 
 
 void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues) {
@@ -65,7 +65,10 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
             triangle.vertices[2].normal = (vec_t) {objmodel->normals[iNorm2].x, objmodel->normals[iNorm2].y, objmodel->normals[iNorm2].z, 0.0};
         }
 
-        // set metadata for each vertex
+        triangle.vertices[0].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
+        triangle.vertices[1].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
+        triangle.vertices[2].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
+
         model->triangles[i] = triangle;
 
     }

@@ -91,6 +91,7 @@ void bmClear(bitmap_t *bitmap, float r, float g, float b) {
             pixel->r = r;
             pixel->g = g;
             pixel->b = b;
+            pixel->z = 100000.0f;
         }
     }
 }
