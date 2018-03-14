@@ -4,7 +4,11 @@
 #include "objfile.h"
 #include "camera.h"
 #include "bitmap.h"
+#include "uniforms.h"
+#include "shader.h"
+#include "model.h"
 #include <stdio.h>
+#include <windows.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -12,14 +16,18 @@
 
 camera_t camera;
 model_t model;
+shader_t shader;
+
+
+
 
 
 void create() {
 
     // MODEL
     obj_model_t obj_diablo;
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
+//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
+//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
     char *texturesDiablo[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
@@ -44,6 +52,11 @@ void create() {
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
 
 
+    // SHADER
+    shader.vsh = vshDefault;
+    shader.fsh = fshDefault;
+    ubCreateBuffer(&shader.uniforms, 8);
+
 }
 
 
@@ -51,6 +64,7 @@ void create() {
 
 void updateFunc(bitmap_t *displayBuffer) {
 
+    // UPDATE CAMERA
     double camSpeed = 0.4 ;
     if(inGetKeyState('w') == IN_DOWN) { camMove(&camera, 0,  camSpeed); }
     if(inGetKeyState('s') == IN_DOWN) { camMove(&camera, 0, -camSpeed); }
@@ -59,9 +73,24 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(inGetKeyState('q') == IN_DOWN) { camMove(&camera, 2,  camSpeed); }
     if(inGetKeyState('e') == IN_DOWN) { camMove(&camera, 2, -camSpeed); }
     camSetRendertargetEXT(&camera, displayBuffer, 1);
+    camUpdate(&camera);
 
-    rcDrawModel(&camera, &model);
 
+    // MISC
+    matrix_t mvp;
+    matMul(&mvp, &camera.viewProjection, &model.modelTransform);
+    mdlUpdateTransform(&model);
+
+    // SET UNIFORMS
+    ubSetUniform(&shader.uniforms, 0, &mvp, sizeof(matrix_t));
+    ubSetUniform(&shader.uniforms, 1, &model.modelTransform, sizeof(matrix_t));
+
+
+    // RENDER
+    rcDrawModel(&camera, &model, &shader);
+
+
+    // PRINT PIXEL-INFO
     if(inGetKeyState('i') == IN_RELEASED) {
         int mx = inGetKeyX('i');
         int my = inGetKeyY('i');
@@ -73,11 +102,10 @@ void updateFunc(bitmap_t *displayBuffer) {
             printf("depth = %f\n", pixel->z);
             printf("============\n");
         } else {
-            printf("Failed: Out-of-bounds !");
+            printf("Failed: Out-of-bounds!");
         }
 
     }
-
 
 }
 
@@ -85,8 +113,10 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
 void exitFunc() {
+    ubFreeBuffer(&shader.uniforms);
     dpDispose();
 }
+
 
 
 

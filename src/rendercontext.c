@@ -1,12 +1,7 @@
 #include "rendercontext.h"
-#include "camera.h"
 #include "bresenham.h"
-#include "geometry.h"
-#include "bitmap.h"
 
-#include <stdio.h>
 #include <math.h>
-#include <windows.h>
 
 
 
@@ -113,26 +108,6 @@ void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, 
 
 // VERTEX PROCESSING
 
-/*
-
-// projectVertex-steps
-vin: vec3(    0.7266;     0.2031;     0.6016;     1.0000)
-mvp: vec3(   -7.9461;     2.3763;    19.9839;    20.1437) *
-sst: vec3( 4879.0723;  5330.2310;    19.9839;    20.1437)
-out: vec3(  242.2129;   264.6099;     0.9921;     1.0000)
-
- // debug
-org: vec3(  242.2129;   264.6099;     0.9921;     1.0000)
-mdl: vec3(   -1.1363;     2.0313;     9.3641;     1.0000)
-viw: vec3(   -7.4185;     1.6639;    20.1437;     1.0000) *
-prj: vec3(   -7.9461;     2.3763;    19.9839;    20.1437)
-
-(far+near)/(far-near) + (1.0/z)*((-2.0*far*near)/(far-near))    // here: converts from "19.9839" to "0.9921"
-
-(2*far near) / (far (-z) + far + near z + near)  // here covert from "0.9921" to "19.9839"
-
-*/
-
 int cullBackface(vec_t *A, vec_t *B, vec_t *C) {
     vec_t triNormal;
     vec_t triAB, triAC;
@@ -152,9 +127,8 @@ int cullBackface(vec_t *A, vec_t *B, vec_t *C) {
 
 
 
-void projectVertex(vertex_t *vertexOut, vertex_t *vertexIn, matrix_t *mvp, matrix_t *sst) {
-    matTransform(&vertexOut->position, &vertexIn->position, mvp);
-    matTransform(&vertexOut->position, &vertexOut->position, sst);
+void projectVertex(vertex_t *vertexOut, vertex_t *vertexIn, matrix_t *sst) {
+    matTransform(&vertexOut->position, &vertexIn->position, sst);
     vecPerspectiveDivide(&vertexOut->position, &vertexOut->position);
 }
 
@@ -168,16 +142,13 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
 }
 
 
-void rcDrawModel(camera_t *camera, model_t *model) {
+void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
 
     // get rendertarget
     bitmap_t *rendertarget = camera->rendertargets;
     float rtWidth = rendertarget->width;
     float rtHeight = rendertarget->height;
 
-    // get / calculate matrices (mvp,sst)
-    mdlUpdateTransform(model);
-    matrix_t mvp; matMul(&mvp, &camera->viewProjection, &model->modelTransform);
     matrix_t sst = camera->screenSpaceTransform;
 
     vertex_t v0;
@@ -199,9 +170,13 @@ void rcDrawModel(camera_t *camera, model_t *model) {
         copyVertex(&v2, vo2);
 
         // transform / project vertices
-        projectVertex(&v0, vo0, &mvp, &sst);
-        projectVertex(&v1, vo1, &mvp, &sst);
-        projectVertex(&v2, vo2, &mvp, &sst);
+        shader->vsh(vo0, &v0, shader);
+        shader->vsh(vo1, &v1, shader);
+        shader->vsh(vo2, &v2, shader);
+
+        projectVertex(&v0, &v0, &sst);
+        projectVertex(&v1, &v1, &sst);
+        projectVertex(&v2, &v2, &sst);
 
         // cull depth
         if( (v0.position.z < 0 || v0.position.z > 1) || (v1.position.z < 0 || v1.position.z > 1) || (v2.position.z < 0 || v2.position.z > 1) ) {

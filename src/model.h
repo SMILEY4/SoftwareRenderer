@@ -8,25 +8,19 @@
 #include "camera.h"
 
 
-typedef struct triangle_t triangle_t;
-typedef struct model_t model_t;
-typedef struct vertex_t vertex_t;
-
-
-
-struct vertex_t {
+typedef struct {
     vec_t position;
     vec_t normal;
     vec_t texCoord;
     vec_t color;
-};
+} vertex_t;
 
 
-struct triangle_t {
+typedef struct {
     vertex_t *vertices;
-};
+} triangle_t;
 
-struct model_t {
+typedef struct {
     vec_t translation, rotation, scale;
     matrix_t matTranslation, matRotation, matScale;
     matrix_t modelTransform;
@@ -34,7 +28,7 @@ struct model_t {
     triangle_t *triangles;
     unsigned int nTriangles;
     bitmap_t *textures;
-};
+} model_t;
 
 
 
