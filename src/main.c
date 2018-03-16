@@ -14,6 +14,7 @@
 #define HEIGHT 600
 
 
+camera_t screenshotCam;
 camera_t camera;
 model_t model;
 shader_t shader;
@@ -26,9 +27,9 @@ void create() {
 
     // MODEL
     obj_model_t obj_diablo;
-//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
+  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
 //  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
     char *texturesDiablo[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
@@ -100,11 +101,40 @@ void updateFunc(bitmap_t *displayBuffer) {
             printf("pick at %d %d\n", mx, my);
             printf("color = %f %f %f %f\n", pixel->r, pixel->g, pixel->b, pixel->a);
             printf("depth = %f\n", pixel->z);
+            printf("triangle = %d\n", pixel->triangleID);
             printf("============\n");
+            g_pickedTriangle = pixel->triangleID;
         } else {
             printf("Failed: Out-of-bounds!");
         }
 
+    }
+
+
+    // SAVE TO FILE
+    if(inGetKeyState('p') == IN_RELEASED) {
+        char *path = "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\screenshot.png";
+
+        bitmap_t screenshot;
+        bmCreate(&screenshot, WIDTH*2, HEIGHT*2);
+        bmClear(&screenshot, 0.0f, 0.0f, 0.0f);
+
+        camCreateEXT(&screenshotCam, WIDTH*2, HEIGHT*2, 70.0, 0.1f, 100.0f, camera.pos, camera.target, camera.up);
+        camSetRendertargetEXT(&screenshotCam, &screenshot, 1);
+        camUpdate(&screenshotCam);
+
+        matrix_t mvpSS;
+        matMul(&mvpSS, &screenshotCam.viewProjection, &model.modelTransform);
+        mdlUpdateTransform(&model);
+
+        ubSetUniform(&shader.uniforms, 0, &mvpSS, sizeof(matrix_t));
+        ubSetUniform(&shader.uniforms, 1, &model.modelTransform, sizeof(matrix_t));
+
+        rcDrawModel(&screenshotCam, &model, &shader);
+
+        bmSaveToFile(&screenshot, path);
+
+        printf("screenshot saved: %s\n", path);
     }
 
 }

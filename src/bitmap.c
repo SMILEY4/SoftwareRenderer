@@ -91,7 +91,9 @@ void bmClear(bitmap_t *bitmap, float r, float g, float b) {
             pixel->r = r;
             pixel->g = g;
             pixel->b = b;
+            pixel->a = 0.0f;
             pixel->z = 100000.0f;
+            pixel->triangleID = -1;
         }
     }
 }
@@ -151,6 +153,33 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
     }
     // clean up png
     free(png);
+    free(image);
+}
+
+
+
+
+void bmSaveToFile(bitmap_t *bitmap, char *filepath) {
+
+    int width = bitmap->width;
+    int height = bitmap->height;
+
+    unsigned char *image = malloc((size_t)(width * height * 4));
+    for(int y=0; y<height; y++) {
+        for(int x=0; x<width; x++) {
+            pixel_t *px = bmGetPixelAt(bitmap, x, y);
+            image[4 * width * y + 4 * x + 0] = (unsigned char)(px->r*255);
+            image[4 * width * y + 4 * x + 1] = (unsigned char)(px->g*255);
+            image[4 * width * y + 4 * x + 2] = (unsigned char)(px->b*255);
+            image[4 * width * y + 4 * x + 3] = (unsigned char)(px->a*255);
+        }
+    }
+
+    unsigned error = lodepng_encode32_file(filepath, image, bitmap->width, bitmap->height);
+    if(error) {
+        printf("error %u: %s\n", error, lodepng_error_text(error));
+    }
+
     free(image);
 }
 

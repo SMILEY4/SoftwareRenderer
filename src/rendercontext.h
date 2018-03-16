@@ -6,6 +6,8 @@
 #include "shader.h"
 
 
+int g_pickedTriangle;
+
 void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader);
 
 #endif

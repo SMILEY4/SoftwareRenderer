@@ -13,11 +13,13 @@ typedef struct {
     vec_t normal;
     vec_t texCoord;
     vec_t color;
+    int triangleID;
 } vertex_t;
 
 
 typedef struct {
     vertex_t *vertices;
+    int triangleID;
 } triangle_t;
 
 typedef struct {

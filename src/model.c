@@ -69,6 +69,11 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
         triangle.vertices[1].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
         triangle.vertices[2].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
 
+
+        triangle.triangleID = i;
+        triangle.vertices[0].triangleID = i;
+        triangle.vertices[1].triangleID = i;
+        triangle.vertices[2].triangleID = i;
         model->triangles[i] = triangle;
 
     }

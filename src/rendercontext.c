@@ -1,8 +1,11 @@
 #include "rendercontext.h"
 #include "bresenham.h"
-
+#include "input.h"
+#include "model.h"
+#include "bitmap.h"
+#include "geometry.h"
+#include <stdio.h>
 #include <math.h>
-
 
 
 
@@ -18,6 +21,17 @@
 float calcDepth(float z, float zNear, float zFar) {
     return (2.0f*zFar*zNear) / (zFar*(-z) + zFar + zNear*z + zNear);
 }
+
+
+void interpolate(vec_t *bary, vec_t *p1, vec_t *p2, vec_t *p3, float w1, float w2, float w3, float oow, vec_t *dst) {
+    float x = ( ((bary->x/w1)*p1->x) + ((bary->y/w2)*p2->x) + ((bary->z/w3)*p3->x) ) / oow;
+    float y = ( ((bary->x/w1)*p1->y) + ((bary->y/w2)*p2->y) + ((bary->z/w3)*p3->y) ) / oow;
+    float z = ( ((bary->x/w1)*p1->z) + ((bary->y/w2)*p2->z) + ((bary->z/w3)*p3->z) ) / oow;
+    dst->x = x;
+    dst->y = y;
+    dst->z = z;
+}
+
 
 
 void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
@@ -63,7 +77,7 @@ void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, 
                 continue;
             }
 
-            // draw pixel
+            // get pixel
             pixel_t *pixel = bmGetPixelAt(rendertarget, x, y);
             if(!pixel) { continue; }
 
@@ -76,23 +90,51 @@ void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, 
             }
             pixel->z = zIpl;
 
-
             // calc perspective correct bary coords
-            float dPx = calcDepth(zIpl, 0.1f, 100.0f);
-            texelCoords = (vec_t){texelCoords.x*dPx, texelCoords.y*dPx, 0.0, 0.0};
-            vec_t a0 = {v0->position.x*v0->position.w, v0->position.y*v0->position.w, 0.0, 0.0};
-            vec_t a1 = {v1->position.x*v1->position.w, v1->position.y*v1->position.w, 0.0, 0.0};
-            vec_t a2 = {v2->position.x*v2->position.w, v2->position.y*v2->position.w, 0.0, 0.0};
-            barycentric(&baryCoords, &a0, &a1, &a2, &texelCoords);
+            float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
+
+            vec_t pcBary = {0,0,0,0};
+            interpolate(&baryCoords, &(vec_t){1,0,0,0}, &(vec_t){0,1,0,0}, &(vec_t){0,0,1,0}, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
+
+
+//            if(g_pickedTriangle == v0->triangleID && inGetKeyState('z') == IN_DOWN) {
+//                printf("triangle: %d\n", g_pickedTriangle);
+//                vecPrint(&baryCoords, "by ");
+//                vecPrint(&v0->position, "v0 ");
+//                vecPrint(&v1->position, "v1 ");
+//                vecPrint(&v2->position, "v2 ");
+//                vecPrint(&texelCoords, "tx");
+//                printf("%10.4f,  %10.4f,  %10.4f,     %10.4f \n", v0->position.w, v1->position.w, v2->position.w, dPx);
+//                printf("========\n\n");
+//            }
+
+            if(pcBary.x < 0 || pcBary.y < 0 || pcBary.z < 0) {
+                if(inGetKeyState('u') == IN_DOWN) {
+                    pixel->r = 0.0f;
+                    pixel->g = 1.0f;
+                    pixel->b = 0.0f;
+                    pixel->a = 1.0f;
+                    pixel->triangleID = v0->triangleID;
+                    continue;
+                }
+            }
+
+
+            pixel->r = pcBary.x;
+            pixel->g = pcBary.y;
+            pixel->b = pcBary.z;
+            pixel->a = 1.0f;
+            pixel->triangleID = v0->triangleID;
 
             // get texture
-            vec_t texCoords;  interpolateBary(&texCoords, &v0->texCoord, &v1->texCoord, &v2->texCoord, &baryCoords);
+            vec_t texCoords;  interpolateBary(&texCoords, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
             pixel_t *sample = bmGetPixelUV(texture, texCoords.x, texCoords.y);
             if(sample) {
                 pixel->r = sample->r;
                 pixel->g = sample->g;
                 pixel->b = sample->b;
                 pixel->a = 1.0f;
+                pixel->triangleID = v0->triangleID;
             }
 
         }
@@ -139,6 +181,7 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
     dst->normal = src->normal;
     dst->texCoord = src->texCoord;
     dst->color = src->color;
+    dst->triangleID = src->triangleID;
 }
 
 

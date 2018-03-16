@@ -10,6 +10,7 @@ typedef struct {
     float b;
     float a;
     float z;
+    int triangleID;
 } pixel_t;
 
 
@@ -37,6 +38,8 @@ void bmClear(bitmap_t *bitmap, float r, float g, float b);
 void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);
 
 void bmCreateFromPNG(bitmap_t *bitmap, char *filepath);
+
+void bmSaveToFile(bitmap_t *bitmap, char *filepath);
 
 void bmDispose(bitmap_t *bitmap);
 

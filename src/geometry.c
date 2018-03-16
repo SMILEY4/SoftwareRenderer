@@ -92,6 +92,7 @@ void vecSub(vec_t *dst, vec_t *a, vec_t *b) {
     dst->x = a->x - b->x;
     dst->y = a->y - b->y;
     dst->z = a->z - b->z;
+    dst->w = a->w - b->w;
 }
 
 
@@ -462,6 +463,8 @@ void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
     dst->z = vecCross2D(&V1, &Q) / vecCross2D(&V1, &V2);
     dst->x = 1.0f - dst->y -  dst->z;
 }
+
+
 
 
 void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords) {
