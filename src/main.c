@@ -1,6 +1,7 @@
 #include "display.h"
 #include "input.h"
 #include "rendercontext.h"
+#include "textrenderer.h"
 #include "objfile.h"
 #include "camera.h"
 #include "bitmap.h"
@@ -9,6 +10,7 @@
 #include "model.h"
 #include <stdio.h>
 #include <windows.h>
+#include <time.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -27,9 +29,9 @@ void create() {
 
     // MODEL
     obj_model_t obj_diablo;
-  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
+//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
 //  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
     char *texturesDiablo[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
@@ -56,7 +58,12 @@ void create() {
     // SHADER
     shader.vsh = vshDefault;
     shader.fsh = fshDefault;
-    ubCreateBuffer(&shader.uniforms, 8);
+    ubCreateBuffer(&shader.uniforms, 8, 2);
+
+
+    // MISC
+    trCreateFont();
+
 
 }
 
@@ -88,7 +95,17 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
     // RENDER
+    clock_t start, end;
+    start = clock();
+
     rcDrawModel(&camera, &model, &shader);
+
+    end = clock();
+    int dtms = (int)(end - start);
+
+    char *debugInfo = malloc(10 * sizeof(char));
+    sprintf(debugInfo, "dt: %d ms", dtms);
+    trDrawString(displayBuffer, debugInfo, 10, 100, 100, 2);
 
 
     // PRINT PIXEL-INFO
