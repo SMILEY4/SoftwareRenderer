@@ -465,6 +465,18 @@ void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
 }
 
 
+void baryCorrectPerspective(vec_t *bary, float w1, float w2, float w3, float oow, vec_t *dst) {
+    static vec_t p1 = {1, 0, 0, 0};
+    static vec_t p2 = {0, 1, 0, 0};
+    static vec_t p3 = {0, 0, 1, 0};
+    float x = ( ((bary->x/w1)*p1.x) + ((bary->y/w2)*p2.x) + ((bary->z/w3)*p3.x) ) / oow;
+    float y = ( ((bary->x/w1)*p1.y) + ((bary->y/w2)*p2.y) + ((bary->z/w3)*p3.y) ) / oow;
+    float z = ( ((bary->x/w1)*p1.z) + ((bary->y/w2)*p2.z) + ((bary->z/w3)*p3.z) ) / oow;
+    dst->x = x;
+    dst->y = y;
+    dst->z = z;
+}
+
 
 
 void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords) {

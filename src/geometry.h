@@ -104,6 +104,8 @@ void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up);
 
 void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P);
 
+void baryCorrectPerspective(vec_t *bary, float w1, float w2, float w3, float oow, vec_t *dst);
+
 void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords);
 
 

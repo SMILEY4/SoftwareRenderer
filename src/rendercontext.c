@@ -4,37 +4,17 @@
 #include "model.h"
 #include "bitmap.h"
 #include "geometry.h"
+#include "camera.h"
 #include <stdio.h>
 #include <math.h>
 
 
 
-// FRAGMENT PROCESSING
-
-
-
-
-
-
 // RASTERIZER
 
-float calcDepth(float z, float zNear, float zFar) {
-    return (2.0f*zFar*zNear) / (zFar*(-z) + zFar + zNear*z + zNear);
-}
+void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
 
-
-void interpolate(vec_t *bary, vec_t *p1, vec_t *p2, vec_t *p3, float w1, float w2, float w3, float oow, vec_t *dst) {
-    float x = ( ((bary->x/w1)*p1->x) + ((bary->y/w2)*p2->x) + ((bary->z/w3)*p3->x) ) / oow;
-    float y = ( ((bary->x/w1)*p1->y) + ((bary->y/w2)*p2->y) + ((bary->z/w3)*p3->y) ) / oow;
-    float z = ( ((bary->x/w1)*p1->z) + ((bary->y/w2)*p2->z) + ((bary->z/w3)*p3->z) ) / oow;
-    dst->x = x;
-    dst->y = y;
-    dst->z = z;
-}
-
-
-
-void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
+    bitmap_t *rendertarget = camera->rendertargets+0;
 
     // calculate bounding
     float minY = v0->position.y;
@@ -82,60 +62,29 @@ void rasterizeTriangle(bitmap_t *rendertarget, bitmap_t *texture, vertex_t *v0, 
             if(!pixel) { continue; }
 
             // depth test
-            vec_t posIpl; interpolateBary(&posIpl, &v0->position, &v1->position, &v2->position, &baryCoords);
+            vec_t iplPos;
+            interpolateBary(&iplPos, &v0->position, &v1->position, &v2->position, &baryCoords);
             float zPixel = pixel->z;
-            float zIpl = posIpl.z;
+            float zIpl = iplPos.z;
             if(zPixel < zIpl) {
                 continue;
             }
             pixel->z = zIpl;
+            pixel->triangleID = v0->triangleID;
 
             // calc perspective correct bary coords
             float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
-
             vec_t pcBary = {0,0,0,0};
-            interpolate(&baryCoords, &(vec_t){1,0,0,0}, &(vec_t){0,1,0,0}, &(vec_t){0,0,1,0}, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
+            baryCorrectPerspective(&baryCoords, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
 
+            // interpolate vertex attributes
+            vec_t iplUV, iplNrm, iplClr;
+            interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
+            interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
+            interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
 
-//            if(g_pickedTriangle == v0->triangleID && inGetKeyState('z') == IN_DOWN) {
-//                printf("triangle: %d\n", g_pickedTriangle);
-//                vecPrint(&baryCoords, "by ");
-//                vecPrint(&v0->position, "v0 ");
-//                vecPrint(&v1->position, "v1 ");
-//                vecPrint(&v2->position, "v2 ");
-//                vecPrint(&texelCoords, "tx");
-//                printf("%10.4f,  %10.4f,  %10.4f,     %10.4f \n", v0->position.w, v1->position.w, v2->position.w, dPx);
-//                printf("========\n\n");
-//            }
-
-            if(pcBary.x < 0 || pcBary.y < 0 || pcBary.z < 0) {
-                if(inGetKeyState('u') == IN_DOWN) {
-                    pixel->r = 0.0f;
-                    pixel->g = 1.0f;
-                    pixel->b = 0.0f;
-                    pixel->a = 1.0f;
-                    pixel->triangleID = v0->triangleID;
-                    continue;
-                }
-            }
-
-
-            pixel->r = pcBary.x;
-            pixel->g = pcBary.y;
-            pixel->b = pcBary.z;
-            pixel->a = 1.0f;
-            pixel->triangleID = v0->triangleID;
-
-            // get texture
-            vec_t texCoords;  interpolateBary(&texCoords, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
-            pixel_t *sample = bmGetPixelUV(texture, texCoords.x, texCoords.y);
-            if(sample) {
-                pixel->r = sample->r;
-                pixel->g = sample->g;
-                pixel->b = sample->b;
-                pixel->a = 1.0f;
-                pixel->triangleID = v0->triangleID;
-            }
+            // call fragment shader
+            shader->fsh(camera, model, shader, pixel, &iplPos, &iplUV, &iplNrm, &iplClr);
 
         }
     }
@@ -188,7 +137,7 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
 void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
 
     // get rendertarget
-    bitmap_t *rendertarget = camera->rendertargets;
+    bitmap_t *rendertarget = camera->rendertargets+0;
     float rtWidth = rendertarget->width;
     float rtHeight = rendertarget->height;
 
@@ -241,12 +190,7 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
         }
 
         // rasterize
-        rasterizeTriangle(rendertarget, &model->textures[0], &v0, &v1, &v2);
-
-        // draw wireframe
-//        bhDrawLine(rendertarget, (int)v0.position.x, (int)v0.position.y, (int)v1.position.x, (int)v1.position.y, 1.0f, 1.0f, 1.0f);
-//        bhDrawLine(rendertarget, (int)v0.position.x, (int)v0.position.y, (int)v2.position.x, (int)v2.position.y, 1.0f, 1.0f, 1.0f);
-//        bhDrawLine(rendertarget, (int)v1.position.x, (int)v1.position.y, (int)v2.position.x, (int)v2.position.y, 1.0f, 1.0f, 1.0f);
+        rasterizeTriangle(camera, model, shader, &v0, &v1, &v2);
 
     }
 

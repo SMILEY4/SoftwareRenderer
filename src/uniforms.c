@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 
-void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize) {
+void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxTextures) {
     buffer->maxSize = maxSize;
     buffer->uniforms = calloc((size_t)maxSize, sizeof(uniform_t));
     for(int i=0; i<maxSize; i++) {
@@ -10,6 +10,7 @@ void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize) {
         uniform->data = NULL;
         uniform->size = 0;
     }
+    buffer->textures = calloc((size_t)maxTextures, sizeof(bitmap_t*));
 }
 
 
@@ -45,6 +46,26 @@ void* ubGetUniform(uniformbuffer_t *buffer, int idx) {
         return NULL;
     }
     return buffer->uniforms[idx].data;
+}
+
+
+
+
+void ubSetTexture(uniformbuffer_t *buffer, int texIdx, bitmap_t *bitmap) {
+    if(texIdx < 0 || texIdx >= buffer->maxTextures) {
+        return;
+    }
+    buffer->textures[texIdx] = bitmap;
+}
+
+
+
+
+bitmap_t* ubGetTexture(uniformbuffer_t *buffer, int texIdx) {
+    if(texIdx < 0 || texIdx >= buffer->maxTextures) {
+        return NULL;
+    }
+    return buffer->textures[texIdx];
 }
 
 
