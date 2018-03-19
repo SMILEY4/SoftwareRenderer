@@ -7,3 +7,7 @@ A 3d Software Renderer written in pure C.
 - Orbiting Camera
 - Save to File
 - Simple (Software only) Textrenderer
+
+
+### Screenshots
+![alt text](https://i.imgur.com/RqLAStx.png)
