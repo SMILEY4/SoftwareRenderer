@@ -1,12 +1,17 @@
 #include "rendercontext.h"
 #include "bresenham.h"
-#include "input.h"
-#include "model.h"
-#include "bitmap.h"
-#include "geometry.h"
-#include "camera.h"
-#include <stdio.h>
 #include <math.h>
+
+
+
+
+void rcCreateRenderData(renderdata_t *renderdata, int nObjects) {
+    renderdata->shaders = calloc((size_t)nObjects, sizeof(shader_t*));
+    renderdata->objects = calloc((size_t)nObjects, sizeof(model_t*));
+    renderdata->cameras = calloc((size_t)nObjects, sizeof(camera_t*));
+    renderdata->nObjects = nObjects;
+}
+
 
 
 
@@ -125,6 +130,7 @@ void projectVertex(vertex_t *vertexOut, vertex_t *vertexIn, matrix_t *sst) {
 
 
 
+
 void copyVertex(vertex_t *dst, vertex_t *src) {
     dst->position = src->position;
     dst->normal = src->normal;
@@ -132,6 +138,8 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
     dst->color = src->color;
     dst->triangleID = src->triangleID;
 }
+
+
 
 
 void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
@@ -146,6 +154,9 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
     vertex_t v0;
     vertex_t v1;
     vertex_t v2;
+
+    // call pre-shader
+    shader->psh(camera, model, shader);
 
     // for each triangle
     for(int i=0; i<model->nTriangles; i++) {
@@ -194,5 +205,15 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
 
     }
 
-
 }
+
+
+
+
+void rcDrawRenderData(renderdata_t *renderdata) {
+    for(int i=0; i<renderdata->nObjects; i++) {
+        rcDrawModel(renderdata->cameras[i], renderdata->objects[i], renderdata->shaders[i]);
+    }
+}
+
+

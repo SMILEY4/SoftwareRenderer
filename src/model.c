@@ -81,6 +81,7 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
 
 
     // load texture
+    model->nTextures = nTextures;
     if(textureFiles && nTextures > 0) {
         model->textures = calloc(nTextures, sizeof(bitmap_t));
         for(int i=0; i<nTextures; i++) {
@@ -104,6 +105,9 @@ void mdlFreeModel(model_t *model) {
         for(int i=0; i<model->nTriangles; i++) {
             triangle_t triangle = model->triangles[i];
             free(triangle.vertices);
+        }
+        for(int i=0; i<model->nTextures; i++) {
+            bmDispose(&model->textures[i]);
         }
         free(model->triangles);
     }

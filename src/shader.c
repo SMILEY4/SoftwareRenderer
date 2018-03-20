@@ -4,6 +4,18 @@
 #include <math.h>
 
 
+
+
+void pshDefault(camera_t *camera, model_t *model, shader_t *shader) {
+    matrix_t mvp;
+    mdlUpdateTransform(model);
+    matMul(&mvp, &camera->viewProjection, &model->modelTransform);
+    ubSetUniform(&shader->uniforms, 0, &mvp, sizeof(matrix_t));
+}
+
+
+
+
 void vshDefault(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader) {
     matrix_t *mvp = (matrix_t*)ubGetUniform(&shader->uniforms, 0);
     matTransform(&vertexOut->position, &vertexIn->position, mvp);
@@ -17,7 +29,7 @@ void vshDefault(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader) {
 
 void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplPos, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr) {
 
-    static vec_t L = {1, 0.5, 0.5};
+    static vec_t L = {-13.6428f, 1.2000f, 13.1327f};
     L.w = 0.0;
     vecNormalize(&L, &L);
 
@@ -42,5 +54,4 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     pixel->g = NdotL * sample->g;
     pixel->b = NdotL * sample->b;
     pixel->a = 1.0;
-
 }

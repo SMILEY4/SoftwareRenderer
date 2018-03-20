@@ -28,13 +28,18 @@ void ubSetUniform(uniformbuffer_t *buffer, int idx, const void *data, size_t siz
         uniform->size = 0;
 
     } else {
-        if(uniform->size > 0) {
-            free(uniform->data);
-            uniform->size = 0;
+        if(uniform->size == size) {
+            memcpy(uniform->data, data, size);
+
+        } else {
+            if(uniform->size > 0) {
+                free(uniform->data);
+                uniform->size = 0;
+            }
+            uniform->data = malloc(size);
+            uniform->size = size;
+            memcpy(uniform->data, data, size);
         }
-        uniform->data = malloc(size);
-        uniform->size = size;
-        memcpy(uniform->data, data, size);
     }
 }
 

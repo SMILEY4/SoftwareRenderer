@@ -16,21 +16,21 @@
 #define HEIGHT 600
 
 
-camera_t screenshotCam;
 camera_t camera;
-model_t model;
-shader_t shader;
-
+camera_t screenshotCam;
+shader_t shaderDiablo;
+shader_t shaderPlane;
+model_t modelDiablo;
+model_t modelPlane;
+renderdata_t renderdata;
 
 
 
 
 void create() {
 
-    // MODEL
+    // MODEL DIABLO
     obj_model_t obj_diablo;
-//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_diablo);
-//  objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\smoothMonkeyU.obj", &obj_diablo);
     objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
     char *texturesDiablo[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
@@ -39,13 +39,33 @@ void create() {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
     };
-    mdlCreateFromObj(&obj_diablo, &model, texturesDiablo, 5, 1);
+    mdlCreateFromObj(&obj_diablo, &modelDiablo, texturesDiablo, 5, 1);
     objFree(&obj_diablo);
 
-    model.translation = (vec_t){ 0,   -5,  0, 0};
-    model.rotation =    (vec_t){ 0,   0,  0, 0};
-    model.scale =       (vec_t){ 10, 10, 10, 0};
-    mdlUpdateTransform(&model);
+    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
+    modelDiablo.rotation =    (vec_t){ 0,   0,  0, 0};
+    modelDiablo.scale =       (vec_t){ 10, 10, 10, 0};
+    mdlUpdateTransform(&modelDiablo);
+
+
+    // MODEL PLANE
+    obj_model_t obj_plane;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane.obj", &obj_plane);
+    char *texturesPlane[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
+    };
+    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
+    objFree(&obj_plane);
+
+    modelPlane.translation = (vec_t){ 0, -10, -4, 0};
+    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
+    modelPlane.scale =       (vec_t){ 13, 13, 13, 0};
+    mdlUpdateTransform(&modelPlane);
+
 
 
     // CAMERA
@@ -56,14 +76,29 @@ void create() {
 
 
     // SHADER
-    shader.vsh = vshDefault;
-    shader.fsh = fshDefault;
-    ubCreateBuffer(&shader.uniforms, 8, 2);
+    shaderDiablo.psh = pshDefault;
+    shaderDiablo.vsh = vshDefault;
+    shaderDiablo.fsh = fshDefault;
+    ubCreateBuffer(&shaderDiablo.uniforms, 8, 2);
+
+    shaderPlane.psh = pshDefault;
+    shaderPlane.vsh = vshDefault;
+    shaderPlane.fsh = fshDefault;
+    ubCreateBuffer(&shaderPlane.uniforms, 8, 2);
+
+
+    // RENDERDATA
+    rcCreateRenderData(&renderdata, 2);
+    renderdata.objects[0] = &modelDiablo;
+    renderdata.objects[1] = &modelPlane;
+    renderdata.shaders[0] = &shaderDiablo;
+    renderdata.shaders[1] = &shaderPlane;
+    renderdata.cameras[0] = &camera;
+    renderdata.cameras[1] = &camera;
 
 
     // MISC
     trCreateFont();
-
 
 }
 
@@ -84,28 +119,23 @@ void updateFunc(bitmap_t *displayBuffer) {
     camUpdate(&camera);
 
 
-    // MISC
-    matrix_t mvp;
-    matMul(&mvp, &camera.viewProjection, &model.modelTransform);
-    mdlUpdateTransform(&model);
-
     // SET UNIFORMS
-    ubSetUniform(&shader.uniforms, 0, &mvp, sizeof(matrix_t));
-    ubSetUniform(&shader.uniforms, 1, &model.modelTransform, sizeof(matrix_t));
+    ubSetUniform(&shaderDiablo.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
+    ubSetUniform(&shaderPlane.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
 
 
     // RENDER
     clock_t start, end;
     start = clock();
 
-    rcDrawModel(&camera, &model, &shader);
+    rcDrawRenderData(&renderdata);
+//  rcDrawModel(&camera, &modelDiablo, &shaderDiablo);
 
     end = clock();
     int dtms = (int)(end - start);
-
     char *debugInfo = malloc(10 * sizeof(char));
-    sprintf(debugInfo, "dt: %d ms", dtms);
-    trDrawString(displayBuffer, debugInfo, 10, 100, 100, 2);
+    sprintf(debugInfo, "%dms", dtms);
+    trDrawString(displayBuffer, debugInfo, 10, 20, 20, 2);
 
 
     // PRINT PIXEL-INFO
@@ -129,30 +159,30 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
     // SAVE TO FILE
-    if(inGetKeyState('p') == IN_RELEASED) {
-        char *path = "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\screenshot.png";
-
-        bitmap_t screenshot;
-        bmCreate(&screenshot, WIDTH*2, HEIGHT*2);
-        bmClear(&screenshot, 0.0f, 0.0f, 0.0f);
-
-        camCreateEXT(&screenshotCam, WIDTH*2, HEIGHT*2, 70.0, 0.1f, 100.0f, camera.pos, camera.target, camera.up);
-        camSetRendertargetEXT(&screenshotCam, &screenshot, 1);
-        camUpdate(&screenshotCam);
-
-        matrix_t mvpSS;
-        matMul(&mvpSS, &screenshotCam.viewProjection, &model.modelTransform);
-        mdlUpdateTransform(&model);
-
-        ubSetUniform(&shader.uniforms, 0, &mvpSS, sizeof(matrix_t));
-        ubSetUniform(&shader.uniforms, 1, &model.modelTransform, sizeof(matrix_t));
-
-        rcDrawModel(&screenshotCam, &model, &shader);
-
-        bmSaveToFile(&screenshot, path);
-
-        printf("screenshot saved: %s\n", path);
-    }
+//    if(inGetKeyState('p') == IN_RELEASED) {
+//        char *path = "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\screenshot.png";
+//
+//        bitmap_t screenshot;
+//        bmCreate(&screenshot, WIDTH*2, HEIGHT*2);
+//        bmClear(&screenshot, 0.0f, 0.0f, 0.0f);
+//
+//        camCreateEXT(&screenshotCam, WIDTH*2, HEIGHT*2, 70.0, 0.1f, 100.0f, camera.pos, camera.target, camera.up);
+//        camSetRendertargetEXT(&screenshotCam, &screenshot, 1);
+//        camUpdate(&screenshotCam);
+//
+//        matrix_t mvpSS;
+//        matMul(&mvpSS, &screenshotCam.viewProjection, &modelDiablo.modelTransform);
+//        mdlUpdateTransform(&modelDiablo);
+//
+//        ubSetUniform(&shader.uniforms, 0, &mvpSS, sizeof(matrix_t));
+//        ubSetUniform(&shader.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
+//
+//        rcDrawModel(&screenshotCam, &modelDiablo, &shader);
+//
+//        bmSaveToFile(&screenshot, path);
+//
+//        printf("screenshot saved: %s\n", path);
+//    }
 
 }
 
@@ -160,7 +190,10 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
 void exitFunc() {
-    ubFreeBuffer(&shader.uniforms);
+    ubFreeBuffer(&shaderDiablo.uniforms);
+    ubFreeBuffer(&shaderPlane.uniforms);
+    mdlFreeModel(&modelDiablo);
+    mdlFreeModel(&modelPlane);
     dpDispose();
 }
 

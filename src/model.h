@@ -29,7 +29,10 @@ typedef struct {
 
     triangle_t *triangles;
     unsigned int nTriangles;
+
     bitmap_t *textures;
+    unsigned int nTextures;
+
 } model_t;
 
 

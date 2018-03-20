@@ -1,5 +1,6 @@
 .idea/
 cmake-build-debug/
+cmake-build-release/
 CMakeLists.txt
 watchdata_log.txt
 todo.txt
