@@ -19,23 +19,23 @@ typedef struct {
     unsigned int maxSize;
 
     // texture data
-    bitmap_t **textures;
-    unsigned int maxTextures;
+    void **pointers;
+    unsigned int maxPointers;
 
 } uniformbuffer_t;
 
 
 
 
-void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxTextures);
+void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxPointers);
 
 void ubSetUniform(uniformbuffer_t *buffer, int idx, const void *data, size_t size);
 
 void* ubGetUniform(uniformbuffer_t *buffer, int idx);
 
-void ubSetTexture(uniformbuffer_t *buffer, int texIdx, bitmap_t *bitmap);
+void ubSetPointer(uniformbuffer_t *buffer, int ptrIdx, void *ptr);
 
-bitmap_t* ubGetTexture(uniformbuffer_t *buffer, int texIdx);
+void* ubGetPoiner(uniformbuffer_t *buffer, int ptrIdx);
 
 void ubFreeBuffer(uniformbuffer_t *buffer);
 

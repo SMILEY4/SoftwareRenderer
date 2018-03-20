@@ -1,6 +1,8 @@
 #include "rendercontext.h"
 #include "bresenham.h"
+#include "model.h"
 #include <math.h>
+#include <stdio.h>
 
 
 
@@ -88,8 +90,16 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, verte
             interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
             interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
 
+            vec_t *iplAttribs = NULL;
+            if(v0->nAttribs > 0) {
+                iplAttribs = calloc((size_t)v0->nAttribs, sizeof(vec_t));
+                for(int i=0; i<v0->nAttribs; i++) {
+                    interpolateBary(&iplAttribs[i], &v0->attribs[i], &v1->attribs[i], &v2->attribs[i], &baryCoords);
+                }
+            }
+
             // call fragment shader
-            shader->fsh(camera, model, shader, pixel, &iplPos, &iplUV, &iplNrm, &iplClr);
+            shader->fsh(camera, model, shader, pixel, &iplPos, &iplUV, &iplNrm, &iplClr, iplAttribs);
 
         }
     }
@@ -136,6 +146,8 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
     dst->normal = src->normal;
     dst->texCoord = src->texCoord;
     dst->color = src->color;
+    dst->nAttribs = src->nAttribs;
+    memcpy(dst->attribs, src->attribs, sizeof(vec_t)*src->nAttribs);
     dst->triangleID = src->triangleID;
 }
 
@@ -151,9 +163,14 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
 
     matrix_t sst = camera->screenSpaceTransform;
 
+    // prepare output vertices
     vertex_t v0;
     vertex_t v1;
     vertex_t v2;
+    v0.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+    v1.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+    v2.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+
 
     // call pre-shader
     shader->psh(camera, model, shader);
@@ -203,7 +220,13 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader) {
         // rasterize
         rasterizeTriangle(camera, model, shader, &v0, &v1, &v2);
 
+
     }
+
+
+    free(v0.attribs);
+    free(v1.attribs);
+    free(v2.attribs);
 
 }
 

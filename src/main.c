@@ -17,12 +17,17 @@
 
 
 camera_t camera;
-camera_t screenshotCam;
-shader_t shaderDiablo;
-shader_t shaderPlane;
+camera_t cameraShadow;
+
 model_t modelDiablo;
 model_t modelPlane;
-renderdata_t renderdata;
+
+
+shader_t shaderShadowPass;
+shader_t shaderDefault;
+
+renderdata_t renderdataShadowPass;
+renderdata_t renderdataMainPass;
 
 
 
@@ -74,33 +79,62 @@ void create() {
     vec_t camUp = (vec_t){0, 1, 0, 1};
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 100.0f, camPos, camTgt, camUp);
 
+    vec_t lightPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
+    camCreateFS(&cameraShadow, 400, 400, 1, 70.0f, 0.1f, 100.0f, lightPos, camTgt, camUp);
+    camUpdate(&cameraShadow);
+
 
     // SHADER
-    shaderDiablo.psh = pshDefault;
-    shaderDiablo.vsh = vshDefault;
-    shaderDiablo.fsh = fshDefault;
-    ubCreateBuffer(&shaderDiablo.uniforms, 8, 2);
+    shaderShadowPass.psh = pshShadowPass;
+    shaderShadowPass.vsh = vshShadowPass;
+    shaderShadowPass.fsh = fshShadowPass;
+    ubCreateBuffer(&shaderShadowPass.uniforms, 2, 0);
 
-    shaderPlane.psh = pshDefault;
-    shaderPlane.vsh = vshDefault;
-    shaderPlane.fsh = fshDefault;
-    ubCreateBuffer(&shaderPlane.uniforms, 8, 2);
-
+    shaderDefault.psh = pshDefault;
+    shaderDefault.vsh = vshDefault;
+    shaderDefault.fsh = fshDefault;
+    ubCreateBuffer(&shaderDefault.uniforms, 3, 1);
+    ubSetPointer(&shaderDefault.uniforms, 0, &cameraShadow);
 
     // RENDERDATA
-    rcCreateRenderData(&renderdata, 2);
-    renderdata.objects[0] = &modelDiablo;
-    renderdata.objects[1] = &modelPlane;
-    renderdata.shaders[0] = &shaderDiablo;
-    renderdata.shaders[1] = &shaderPlane;
-    renderdata.cameras[0] = &camera;
-    renderdata.cameras[1] = &camera;
+    rcCreateRenderData(&renderdataShadowPass, 2);
+    renderdataShadowPass.objects[0] = &modelDiablo;
+    renderdataShadowPass.shaders[0] = &shaderShadowPass;
+    renderdataShadowPass.cameras[0] = &cameraShadow;
+    renderdataShadowPass.objects[1] = &modelPlane;
+    renderdataShadowPass.shaders[1] = &shaderShadowPass;
+    renderdataShadowPass.cameras[1] = &cameraShadow;
+
+    rcCreateRenderData(&renderdataMainPass, 2);
+    renderdataMainPass.objects[0] = &modelDiablo;
+    renderdataMainPass.shaders[0] = &shaderDefault;
+    renderdataMainPass.cameras[0] = &camera;
+    renderdataMainPass.objects[1] = &modelPlane;
+    renderdataMainPass.shaders[1] = &shaderDefault;
+    renderdataMainPass.cameras[1] = &camera;
+
 
 
     // MISC
     trCreateFont();
 
 }
+
+
+
+void render(bitmap_t *displayBuffer) {
+
+    bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f);
+    ubSetUniform(&shaderShadowPass.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
+    ubSetUniform(&shaderShadowPass.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
+    rcDrawRenderData(&renderdataShadowPass);
+
+    ubSetUniform(&shaderDefault.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
+    ubSetUniform(&shaderDefault.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
+    rcDrawRenderData(&renderdataMainPass);
+
+}
+
 
 
 
@@ -118,18 +152,11 @@ void updateFunc(bitmap_t *displayBuffer) {
     camSetRendertargetEXT(&camera, displayBuffer, 1);
     camUpdate(&camera);
 
-
-    // SET UNIFORMS
-    ubSetUniform(&shaderDiablo.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
-    ubSetUniform(&shaderPlane.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
-
-
-    // RENDER
     clock_t start, end;
     start = clock();
 
-    rcDrawRenderData(&renderdata);
-//  rcDrawModel(&camera, &modelDiablo, &shaderDiablo);
+    // DRAW
+    render(displayBuffer);
 
     end = clock();
     int dtms = (int)(end - start);
@@ -144,6 +171,8 @@ void updateFunc(bitmap_t *displayBuffer) {
         int my = inGetKeyY('i');
         pixel_t *pixel = bmGetPixelAt(displayBuffer, mx, my);
         if(pixel) {
+            printf("============\n");
+            vecPrint(&camera.pos, "camera");
             printf("============\n");
             printf("pick at %d %d\n", mx, my);
             printf("color = %f %f %f %f\n", pixel->r, pixel->g, pixel->b, pixel->a);
@@ -190,10 +219,11 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
 void exitFunc() {
-    ubFreeBuffer(&shaderDiablo.uniforms);
-    ubFreeBuffer(&shaderPlane.uniforms);
+    ubFreeBuffer(&shaderShadowPass.uniforms);
+    ubFreeBuffer(&shaderDefault.uniforms);
     mdlFreeModel(&modelDiablo);
     mdlFreeModel(&modelPlane);
+    camDispose(&cameraShadow);
     dpDispose();
 }
 

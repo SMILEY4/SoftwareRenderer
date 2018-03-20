@@ -127,4 +127,11 @@ void camMove(camera_t *cam, int dir, double amt) {
 }
 
 
+void camDispose(camera_t *camera) {
+    for(int i=0; i<camera->nRenderTargets; i++) {
+        bmDispose(camera->rendertargets+i);
+    }
+    free(camera->rendertargets);
+}
+
 

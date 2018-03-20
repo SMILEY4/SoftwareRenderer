@@ -13,6 +13,8 @@ typedef struct {
     vec_t normal;
     vec_t texCoord;
     vec_t color;
+    vec_t *attribs;
+    int nAttribs;
     int triangleID;
 } vertex_t;
 
@@ -33,13 +35,14 @@ typedef struct {
     bitmap_t *textures;
     unsigned int nTextures;
 
+    int nVertexAttribs;
 } model_t;
 
 
 
 void mdlUpdateTransform(model_t *model);
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues);
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs);
 
 void mdlFreeModel(model_t *model);
 

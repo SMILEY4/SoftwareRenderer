@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 
-void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxTextures) {
+void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxPointers) {
     buffer->maxSize = maxSize;
     buffer->uniforms = calloc((size_t)maxSize, sizeof(uniform_t));
     for(int i=0; i<maxSize; i++) {
@@ -10,7 +10,8 @@ void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int 
         uniform->data = NULL;
         uniform->size = 0;
     }
-    buffer->textures = calloc((size_t)maxTextures, sizeof(bitmap_t*));
+    buffer->maxPointers = maxPointers;
+    buffer->pointers = calloc((size_t)maxPointers, sizeof(void*));
 }
 
 
@@ -56,21 +57,21 @@ void* ubGetUniform(uniformbuffer_t *buffer, int idx) {
 
 
 
-void ubSetTexture(uniformbuffer_t *buffer, int texIdx, bitmap_t *bitmap) {
-    if(texIdx < 0 || texIdx >= buffer->maxTextures) {
+void ubSetPointer(uniformbuffer_t *buffer, int ptrIdx, void *ptr) {
+    if(ptrIdx < 0 || ptrIdx >= buffer->maxPointers) {
         return;
     }
-    buffer->textures[texIdx] = bitmap;
+    buffer->pointers[ptrIdx] = ptr;
 }
 
 
 
 
-bitmap_t* ubGetTexture(uniformbuffer_t *buffer, int texIdx) {
-    if(texIdx < 0 || texIdx >= buffer->maxTextures) {
+void* ubGetPoiner(uniformbuffer_t *buffer, int ptrIdx) {
+    if(ptrIdx < 0 || ptrIdx >= buffer->maxPointers) {
         return NULL;
     }
-    return buffer->textures[texIdx];
+    return buffer->pointers[ptrIdx];
 }
 
 

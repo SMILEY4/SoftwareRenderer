@@ -14,7 +14,9 @@ void mdlUpdateTransform(model_t *model) {
 }
 
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nAdditionalVertexValues) {
+
+
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs) {
     if(!objmodel) {
         return;
     }
@@ -65,10 +67,25 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
             triangle.vertices[2].normal = (vec_t) {objmodel->normals[iNorm2].x, objmodel->normals[iNorm2].y, objmodel->normals[iNorm2].z, 0.0};
         }
 
+        // set color for each vertex
         triangle.vertices[0].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
         triangle.vertices[1].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
         triangle.vertices[2].color = (vec_t) {(float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, (float)rand()/(float)RAND_MAX, 1.0 };
 
+        // set addition attribs for each vertex
+        model->nVertexAttribs = nVertexAttribs;
+        triangle.vertices[0].nAttribs = nVertexAttribs;
+        triangle.vertices[1].nAttribs = nVertexAttribs;
+        triangle.vertices[2].nAttribs = nVertexAttribs;
+        if(nVertexAttribs > 0) {
+            triangle.vertices[0].attribs = calloc(nVertexAttribs, sizeof(vec_t));
+            triangle.vertices[1].attribs = calloc(nVertexAttribs, sizeof(vec_t));
+            triangle.vertices[2].attribs = calloc(nVertexAttribs, sizeof(vec_t));
+        } else {
+            triangle.vertices[0].attribs = NULL;
+            triangle.vertices[1].attribs = NULL;
+            triangle.vertices[2].attribs = NULL;
+        }
 
         triangle.triangleID = i;
         triangle.vertices[0].triangleID = i;

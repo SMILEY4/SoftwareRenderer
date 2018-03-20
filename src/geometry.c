@@ -485,3 +485,9 @@ void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords
     dst->z = A->z * baryCoords->x  +  B->z * baryCoords->y  +  C->z * baryCoords->z;
     dst->w = A->w * baryCoords->x  +  B->w * baryCoords->y  +  C->w * baryCoords->z;
 }
+
+
+
+float reverseDepth(float z, float zNear, float zFar) {
+    return (2.0f*zFar*zNear) / (zFar*(-z) + zFar + zNear*z + zNear);
+}

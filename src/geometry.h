@@ -108,7 +108,7 @@ void baryCorrectPerspective(vec_t *bary, float w1, float w2, float w3, float oow
 
 void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords);
 
-
+float reverseDepth(float z, float zNear, float zFar);
 
 
 #endif
