@@ -10,4 +10,4 @@ A 3d Software Renderer written in pure C.
 
 
 ### Screenshots
-![alt text](https://i.imgur.com/RqLAStx.png)
+![alt text](https://i.imgur.com/hn457nn.png)
