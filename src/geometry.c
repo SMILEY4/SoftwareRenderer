@@ -168,7 +168,6 @@ void vecPerspectiveDivide(vec_t *dst, vec_t *src) {
     dst->y = src->y / src->w;
     dst->z = src->z / src->w;
     dst->w = src->w;
-//    dst->w = src->w / src->w;
 }
 
 

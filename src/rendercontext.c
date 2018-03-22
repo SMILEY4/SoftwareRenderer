@@ -22,6 +22,10 @@ void rcCreateRenderData(renderdata_t *renderdata, int nObjects) {
 void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
 
     bitmap_t *rendertarget = camera->rendertargets+0;
+    vec_t *iplAttribs = NULL;
+    if(v0->nAttribs > 0) {
+        iplAttribs = calloc((size_t)v0->nAttribs, sizeof(vec_t));
+    }
 
     // calculate bounding
     float minY = v0->position.y;
@@ -68,6 +72,11 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, verte
             pixel_t *pixel = bmGetPixelAt(rendertarget, x, y);
             if(!pixel) { continue; }
 
+            // calc perspective correct bary coords
+            float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
+            vec_t pcBary = {0,0,0,0};
+            baryCorrectPerspective(&baryCoords, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
+
             // depth test
             vec_t iplPos;
             interpolateBary(&iplPos, &v0->position, &v1->position, &v2->position, &baryCoords);
@@ -79,22 +88,15 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, verte
             pixel->z = zIpl;
             pixel->triangleID = v0->triangleID;
 
-            // calc perspective correct bary coords
-            float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
-            vec_t pcBary = {0,0,0,0};
-            baryCorrectPerspective(&baryCoords, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
-
             // interpolate vertex attributes
             vec_t iplUV, iplNrm, iplClr;
             interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
             interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
             interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
 
-            vec_t *iplAttribs = NULL;
             if(v0->nAttribs > 0) {
-                iplAttribs = calloc((size_t)v0->nAttribs, sizeof(vec_t));
                 for(int i=0; i<v0->nAttribs; i++) {
-                    interpolateBary(&iplAttribs[i], &v0->attribs[i], &v1->attribs[i], &v2->attribs[i], &baryCoords);
+                    interpolateBary(&iplAttribs[i], &v0->attribs[i], &v1->attribs[i], &v2->attribs[i], &pcBary);
                 }
             }
 
@@ -104,6 +106,7 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, verte
         }
     }
 
+    free(iplAttribs);
 
 }
 

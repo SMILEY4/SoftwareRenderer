@@ -2,6 +2,7 @@
 #include "model.h"
 #include "bitmap.h"
 #include "camera.h"
+#include "geometry.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -28,10 +29,11 @@ void vshShadowPass(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader) {
 
 
 void fshShadowPass(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplPos, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs) {
+    float d = reverseDepth(iplPos->z, 0.1f, 100.0f) / 100.0f;
     pixel->r = iplPos->z;
-    pixel->g = iplPos->z;
-    pixel->b = 0.4f;
-    pixel->a = 1.0;
+    pixel->g = d;
+    pixel->b = d;
+    pixel->a = 1.0f;
 }
 
 
@@ -121,9 +123,9 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     if(shadowPX) {
         float zShadow = reverseDepth(iplPosShadow.z, camera->zNear, camera->zFar); // TODO: use shadowCam here ?
         float zPixel = reverseDepth(shadowPX->r, camera->zNear, camera->zFar);
-        float bias = fmaxf(1.2f * (1.0f - cosTheta), 0.05f);
-        if(zPixel < zShadow-bias) {
-            visibility = 0.0;
+//        float bias = fmaxf(1.2f * (1.0f - cosTheta), 0.05f);
+        if(zPixel < zShadow) {
+            visibility = 0.2f;
         }
 
     } else {
@@ -131,13 +133,18 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     }
 
     if(cosTheta < 0) {
-        visibility = 0.0;
+        visibility = 0.2f;
     }
 
-    pixel->r = NdotL * sample->r * visibility;
-    pixel->g = NdotL * sample->g * visibility;
-    pixel->b = NdotL * sample->b * visibility;
+    pixel->r = NdotL * sample->r * visibility + 0.2f;
+    pixel->g = NdotL * sample->g * visibility + 0.2f;
+    pixel->b = NdotL * sample->b * visibility + 0.2f;
     pixel->a = 1.0;
 
+
+//    pixel->r = iplPosShadow.x/400.0f;
+//    pixel->g = iplPosShadow.y/400.0f;;
+//    pixel->b = iplPosShadow.z/400.0f;;
+//    pixel->a = 1.0;
 
 }

@@ -64,15 +64,15 @@ void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
 
 
 
-void bmDrawTo(bitmap_t *target, bitmap_t *img) {
+void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale) {
 
     int w = min(target->width, img->width);
     int h = min(target->height, img->height);
 
-    for(int x=0; x<w; x++) {
-        for(int y=0; y<h; y++) {
+    for(int x=0; x<w*scale; x++) {
+        for(int y=0; y<h*scale; y++) {
             pixel_t *tgtPixel = bmGetPixelAt(target, x, y);
-            pixel_t *imgPixel = bmGetPixelAt(img, x, y);
+            pixel_t *imgPixel = bmGetPixelAt(img, (int)(x/scale), (int)(y/scale));
             tgtPixel->r = imgPixel->r;
             tgtPixel->g = imgPixel->g;
             tgtPixel->b = imgPixel->b;

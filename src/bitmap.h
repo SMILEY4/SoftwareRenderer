@@ -33,7 +33,7 @@ pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v);
 
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
-void bmDrawTo(bitmap_t *target, bitmap_t *img);
+void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale);
 
 void bmClear(bitmap_t *bitmap, float r, float g, float b);
 
