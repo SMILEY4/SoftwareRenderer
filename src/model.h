@@ -16,6 +16,7 @@ typedef struct {
     vec_t *attribs;
     int nAttribs;
     int triangleID;
+    int modelID;
 } vertex_t;
 
 
@@ -23,6 +24,7 @@ typedef struct {
     vertex_t *vertices;
     int triangleID;
 } triangle_t;
+
 
 typedef struct {
     vec_t translation, rotation, scale;
@@ -36,13 +38,16 @@ typedef struct {
     unsigned int nTextures;
 
     int nVertexAttribs;
+
+    int modelID;
+
 } model_t;
 
 
 
 void mdlUpdateTransform(model_t *model);
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs);
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs, int modelID);
 
 void mdlFreeModel(model_t *model);
 

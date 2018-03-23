@@ -16,7 +16,7 @@ void mdlUpdateTransform(model_t *model) {
 
 
 
-void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs) {
+void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles, unsigned int nTextures, unsigned int nVertexAttribs, int modelID) {
     if(!objmodel) {
         return;
     }
@@ -24,7 +24,7 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
     // reserve memory for triangles
     model->nTriangles = objmodel->nFaces;
     model->triangles = calloc(model->nTriangles, sizeof(triangle_t));
-
+    model->modelID = modelID;
 
     // for each triangle
     for(int i=0; i<model->nTriangles; i++) {
@@ -91,6 +91,9 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
         triangle.vertices[0].triangleID = i;
         triangle.vertices[1].triangleID = i;
         triangle.vertices[2].triangleID = i;
+        triangle.vertices[0].modelID = modelID;
+        triangle.vertices[1].modelID = modelID;
+        triangle.vertices[2].modelID = modelID;
         model->triangles[i] = triangle;
 
     }

@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 
-void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxPointers) {
-    buffer->maxSize = maxSize;
-    buffer->uniforms = calloc((size_t)maxSize, sizeof(uniform_t));
-    for(int i=0; i<maxSize; i++) {
+void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int ubMaxElements, unsigned int maxPointers) {
+    buffer->maxSize = ubMaxElements;
+    buffer->uniforms = calloc((size_t)ubMaxElements, sizeof(uniform_t));
+    for(int i=0; i<ubMaxElements; i++) {
         uniform_t *uniform = buffer->uniforms+i;
         uniform->data = NULL;
         uniform->size = 0;

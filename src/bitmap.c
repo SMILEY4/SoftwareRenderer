@@ -2,7 +2,7 @@
 #include "lodepng.h"
 #include <windows.h>
 #include <stdio.h>
-#include <float.h>
+#include <math.h>
 
 
 
@@ -22,25 +22,30 @@ void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b) {
 
 
 
-pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y) {
-    if(x < 0) { goto error; }
-    if(x >= bitmap->width) { goto error; }
-    if(y < 0) { goto error; }
-    if(y >= bitmap->height) { goto error; }
+pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y, int wrap) {
+
+    if(wrap) {
+        if (x >= bitmap->width)  { x = x % bitmap->width; }
+        if (y >= bitmap->height) { y = y % bitmap->height; }
+        if (x < 0) { x = x + bitmap->width; }
+        if (y < 0) { y = y + bitmap->height; }
+    }
+
+    if(x < 0)               { return NULL; }
+    if(x >= bitmap->width)  { return NULL; }
+    if(y < 0)               { return NULL; }
+    if(y >= bitmap->height) { return NULL; }
 
     return bitmap->pixels + (bitmap->width*y + x);
-
-    error:
-        return NULL;
 }
 
 
 
 
-pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v) {
+pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v, int wrap) {
     int x = (int)((float)bitmap->width  * u);
     int y = (int)((float)bitmap->height * (1.0-v));
-    return bmGetPixelAt(bitmap, x, y);
+    return bmGetPixelAt(bitmap, x, y, wrap);
 }
 
 
@@ -52,8 +57,8 @@ void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
     }
     for(int y=0; y<dst->height; y++) {
         for(int x=0; x<dst->width; x++) {
-            pixel_t *dstPixel = bmGetPixelAt(dst, x, y);
-            pixel_t *srcPixel = bmGetPixelAt(src, x, y);
+            pixel_t *dstPixel = bmGetPixelAt(dst, x, y, 0);
+            pixel_t *srcPixel = bmGetPixelAt(src, x, y, 0);
             dstPixel->r = srcPixel->r;
             dstPixel->g = srcPixel->g;
             dstPixel->b = srcPixel->b;
@@ -71,8 +76,8 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale) {
 
     for(int x=0; x<w*scale; x++) {
         for(int y=0; y<h*scale; y++) {
-            pixel_t *tgtPixel = bmGetPixelAt(target, x, y);
-            pixel_t *imgPixel = bmGetPixelAt(img, (int)(x/scale), (int)(y/scale));
+            pixel_t *tgtPixel = bmGetPixelAt(target, x, y, 0);
+            pixel_t *imgPixel = bmGetPixelAt(img, (int)(x/scale), (int)(y/scale), 0);
             tgtPixel->r = imgPixel->r;
             tgtPixel->g = imgPixel->g;
             tgtPixel->b = imgPixel->b;
@@ -84,14 +89,14 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale) {
 
 
 
-void bmClear(bitmap_t *bitmap, float r, float g, float b) {
+void bmClear(bitmap_t *bitmap, float r, float g, float b, float a) {
     for(int y=0; y<bitmap->height; y++) {
         for(int x=0; x<bitmap->width; x++) {
-            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y, 0);
             pixel->r = r;
             pixel->g = g;
             pixel->b = b;
-            pixel->a = 0.0f;
+            pixel->a = a;
             pixel->z = 100000.0f;
             pixel->triangleID = -1;
         }
@@ -109,7 +114,7 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height) {
     bitmap->scanbufferMax = calloc(height, sizeof(int));
     for(unsigned int y=0; y<bitmap->height; y++) {
         for(unsigned int x=0; x<bitmap->width; x++) {
-            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y, 0);
             *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f};
         }
     }
@@ -138,7 +143,7 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
     bmCreate(bitmap, (int)w, (int)h);
     for(unsigned int y=0; y<h; y++) {
         for (unsigned int x=0; x<w; x++) {
-            pixel_t *pixel = bmGetPixelAt(bitmap, x, y);
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y, 0);
             *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f};
             if(pixel) {
                 int r = (int)(image[4 * y * w + 4 * x + 0]);
@@ -167,7 +172,7 @@ void bmSaveToFile(bitmap_t *bitmap, char *filepath) {
     unsigned char *image = malloc((size_t)(width * height * 4));
     for(int y=0; y<height; y++) {
         for(int x=0; x<width; x++) {
-            pixel_t *px = bmGetPixelAt(bitmap, x, y);
+            pixel_t *px = bmGetPixelAt(bitmap, x, y, 0);
             image[4 * width * y + 4 * x + 0] = (unsigned char)(px->r*255);
             image[4 * width * y + 4 * x + 1] = (unsigned char)(px->g*255);
             image[4 * width * y + 4 * x + 2] = (unsigned char)(px->b*255);

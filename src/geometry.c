@@ -300,7 +300,7 @@ void matSetScale(matrix_t *mat, float x, float y, float z) {
 void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
     float tanHalfFOV = tanf(fov/2.0f);
     float zRange = zNear - zFar;
-    mat->m[0][0] = 1.0f/(tanHalfFOV*aspectRatio); mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
+    mat->m[0][0] = 1.0f/(tanHalfFOV*aspectRatio);mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
     mat->m[1][0] = 0;                            mat->m[1][1] = 1.0f/tanHalfFOV;              mat->m[1][2] = 0;                            mat->m[1][3] = 0;
     mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = (-zNear -zFar)/zRange;        mat->m[2][3] = 2 * zFar * zNear / zRange;
     mat->m[3][0] = 0;                            mat->m[3][1] = 0;                            mat->m[3][2] = 1;                            mat->m[3][3] = 0;

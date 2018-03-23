@@ -27,15 +27,15 @@ typedef struct {
 
 void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b);
 
-pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y);
+pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y, int wrap);
 
-pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v);
+pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v, int wrap);
 
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
 void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale);
 
-void bmClear(bitmap_t *bitmap, float r, float g, float b);
+void bmClear(bitmap_t *bitmap, float r, float g, float b, float a);
 
 void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);
 

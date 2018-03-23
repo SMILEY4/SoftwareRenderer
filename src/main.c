@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <time.h>
+#include <math.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -18,6 +19,7 @@
 
 camera_t camera;
 camera_t cameraShadow;
+camera_t cameraHiRes;
 
 model_t modelDiablo;
 model_t modelPlane;
@@ -45,18 +47,19 @@ void create() {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
     };
-    mdlCreateFromObj(&obj_diablo, &modelDiablo, texturesDiablo, 5, 1);
+    mdlCreateFromObj(&obj_diablo, &modelDiablo, texturesDiablo, 5, 2, 0);
     objFree(&obj_diablo);
 
-    modelDiablo.translation = (vec_t){ 0,   0,  0, 0};
+    modelDiablo.translation = (vec_t){ 0, 1.75f,  0, 0};
     modelDiablo.rotation =    (vec_t){ 0,   0,  0, 0};
     modelDiablo.scale =       (vec_t){ 10, 10, 10, 0};
     mdlUpdateTransform(&modelDiablo);
 
 
+
     // MODEL PLANE
     obj_model_t obj_plane;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\ground.obj", &obj_plane);
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\groundSub.obj", &obj_plane);
     char *texturesPlane[5] = {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
@@ -64,41 +67,42 @@ void create() {
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
             "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
     };
-    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 1);
+    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 2, 1);
     objFree(&obj_plane);
 
-    modelPlane.translation = (vec_t){ 0, -10, -4, 0};
-    modelPlane.rotation =    (vec_t){ 0,   0,  0, 0};
+    modelPlane.translation = (vec_t){ 0, -8, -4, 0};
+    modelPlane.rotation =    (vec_t){ 0,  0,  0, 0};
     modelPlane.scale =       (vec_t){ 0.1f, 0.1f, 0.1f, 0};
     mdlUpdateTransform(&modelPlane);
 
 
 
     // CAMERA
-    vec_t camPos = (vec_t){-22.481f, 0.0f, 3.6902f, 1.0f};
+    vec_t camPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
     vec_t camTgt = (vec_t){0, 0, 0, 1};
     vec_t camUp = (vec_t){0, 1, 0, 1};
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
 
     vec_t lightPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
-    camCreateFS(&cameraShadow, 400, 400, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
+    camCreateFS(&cameraShadow, 800, 800, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
     camUpdate(&cameraShadow);
+
+    camCreateEXT(&cameraHiRes, WIDTH*3, HEIGHT*3, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
+    camUpdate(&cameraHiRes);
 
 
     // SHADER
     shaderShadowPass.psh = pshShadowPass;
     shaderShadowPass.vsh = vshShadowPass;
     shaderShadowPass.fsh = fshShadowPass;
-    ubCreateBuffer(&shaderShadowPass.uniforms, 2, 0);
 
     shaderDefault.psh = pshDefault;
     shaderDefault.vsh = vshDefault;
     shaderDefault.fsh = fshDefault;
-    ubCreateBuffer(&shaderDefault.uniforms, 3, 1);
-    ubSetPointer(&shaderDefault.uniforms, 0, &cameraShadow);
+
 
     // RENDERDATA
-    rcCreateRenderData(&renderdataShadowPass, 2);
+    rcCreateRenderData(&renderdataShadowPass, 2, 1, 0);
     renderdataShadowPass.objects[0] = &modelDiablo;
     renderdataShadowPass.shaders[0] = &shaderShadowPass;
     renderdataShadowPass.cameras[0] = &cameraShadow;
@@ -106,7 +110,7 @@ void create() {
     renderdataShadowPass.shaders[1] = &shaderShadowPass;
     renderdataShadowPass.cameras[1] = &cameraShadow;
 
-    rcCreateRenderData(&renderdataMainPass, 2);
+    rcCreateRenderData(&renderdataMainPass, 2, 3, 1);
     renderdataMainPass.objects[0] = &modelDiablo;
     renderdataMainPass.shaders[0] = &shaderDefault;
     renderdataMainPass.cameras[0] = &camera;
@@ -114,31 +118,28 @@ void create() {
     renderdataMainPass.shaders[1] = &shaderDefault;
     renderdataMainPass.cameras[1] = &camera;
 
+    // main (p0) = camShadow
+    for(int i=0; i<renderdataMainPass.nObjects; i++) {
+        ubSetPointer(&renderdataMainPass.buffers[i], 0, &cameraShadow);
+    }
 
 
     // MISC
     drawShadow = 1;
     trCreateFont();
+    shInit();
 
 }
 
 
 
 void render(bitmap_t *displayBuffer) {
-
     if(drawShadow) {
         drawShadow = 0;
-        bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f);
-        ubSetUniform(&shaderShadowPass.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
-        ubSetUniform(&shaderShadowPass.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
+        bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f, 0.0f);
         rcDrawRenderData(&renderdataShadowPass);
     }
-
-    ubSetUniform(&shaderDefault.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
-    ubSetUniform(&shaderDefault.uniforms, 1, &modelPlane.modelTransform, sizeof(matrix_t));
     rcDrawRenderData(&renderdataMainPass);
-
-    bmDrawTo(displayBuffer, &cameraShadow.rendertargets[0], 0.5f);
 }
 
 
@@ -146,6 +147,9 @@ void render(bitmap_t *displayBuffer) {
 
 
 void updateFunc(bitmap_t *displayBuffer) {
+
+    static long tick;
+    tick++;
 
     // UPDATE CAMERA
     double camSpeed = 0.4 ;
@@ -155,6 +159,7 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(inGetKeyState('d') == IN_DOWN) { camMove(&camera, 1, -camSpeed); }
     if(inGetKeyState('q') == IN_DOWN) { camMove(&camera, 2,  camSpeed); }
     if(inGetKeyState('e') == IN_DOWN) { camMove(&camera, 2, -camSpeed); }
+    if(inGetKeyState('u') == IN_DOWN) { vecCopy(&camera.pos, &cameraShadow.pos); }
     camSetRendertargetEXT(&camera, displayBuffer, 1);
     camUpdate(&camera);
 
@@ -175,7 +180,7 @@ void updateFunc(bitmap_t *displayBuffer) {
     if(inGetKeyState('i') == IN_RELEASED) {
         int mx = inGetKeyX('i');
         int my = inGetKeyY('i');
-        pixel_t *pixel = bmGetPixelAt(displayBuffer, mx, my);
+        pixel_t *pixel = bmGetPixelAt(displayBuffer, mx, my, 0);
         if(pixel) {
             printf("============\n");
             vecPrint(&camera.pos, "camera");
@@ -194,30 +199,30 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
     // SAVE TO FILE
-//    if(inGetKeyState('p') == IN_RELEASED) {
-//        char *path = "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\screenshot.png";
-//
-//        bitmap_t screenshot;
-//        bmCreate(&screenshot, WIDTH*2, HEIGHT*2);
-//        bmClear(&screenshot, 0.0f, 0.0f, 0.0f);
-//
-//        camCreateEXT(&screenshotCam, WIDTH*2, HEIGHT*2, 70.0, 0.1f, 100.0f, camera.pos, camera.target, camera.up);
-//        camSetRendertargetEXT(&screenshotCam, &screenshot, 1);
-//        camUpdate(&screenshotCam);
-//
-//        matrix_t mvpSS;
-//        matMul(&mvpSS, &screenshotCam.viewProjection, &modelDiablo.modelTransform);
-//        mdlUpdateTransform(&modelDiablo);
-//
-//        ubSetUniform(&shader.uniforms, 0, &mvpSS, sizeof(matrix_t));
-//        ubSetUniform(&shader.uniforms, 1, &modelDiablo.modelTransform, sizeof(matrix_t));
-//
-//        rcDrawModel(&screenshotCam, &modelDiablo, &shader);
-//
-//        bmSaveToFile(&screenshot, path);
-//
-//        printf("screenshot saved: %s\n", path);
-//    }
+    if(inGetKeyState('p') == IN_RELEASED) {
+        char *path = "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\screenshot.png";
+
+        bitmap_t screenshot;
+        bmCreate(&screenshot, WIDTH*3, HEIGHT*3);
+        bmClear(&screenshot, 0.1f, 0.1f, 0.1f, 1.0);
+
+        camSetRendertargetEXT(&cameraHiRes, &screenshot, 1);
+        cameraHiRes.pos = camera.pos;
+        camUpdate(&cameraHiRes);
+
+        renderdataMainPass.cameras[0] = &cameraHiRes;
+        renderdataMainPass.cameras[1] = &cameraHiRes;
+
+        render(displayBuffer);
+
+        renderdataMainPass.cameras[0] = &camera;
+        renderdataMainPass.cameras[1] = &camera;
+
+        bmSaveToFile(&screenshot, path);
+        bmDispose(&screenshot);
+        printf("screenshot saved: %s\n", path);
+
+    }
 
 }
 
@@ -225,8 +230,8 @@ void updateFunc(bitmap_t *displayBuffer) {
 
 
 void exitFunc() {
-    ubFreeBuffer(&shaderShadowPass.uniforms);
-    ubFreeBuffer(&shaderDefault.uniforms);
+    rcFreeRenderData(&renderdataShadowPass);
+    rcFreeRenderData(&renderdataMainPass);
     mdlFreeModel(&modelDiablo);
     mdlFreeModel(&modelPlane);
     camDispose(&cameraShadow);

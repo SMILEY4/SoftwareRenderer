@@ -18,7 +18,6 @@ void camCreateFS(camera_t *camera, float width, float height, unsigned int nRend
     camera->pos = pos;
     camera->target = target;
     camera->up = up;
-    camUpdate(camera);
 
     if(nRenderTargets > 0) {
         camera->nRenderTargets = nRenderTargets;
@@ -30,6 +29,7 @@ void camCreateFS(camera_t *camera, float width, float height, unsigned int nRend
         }
     }
     matSetScreenSpaceTransform(&camera->screenSpaceTransform, width/2.0f, height/2.0f);
+    camUpdate(camera);
 }
 
 

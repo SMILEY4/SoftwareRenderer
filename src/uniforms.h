@@ -27,7 +27,7 @@ typedef struct {
 
 
 
-void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int maxSize, unsigned int maxPointers);
+void ubCreateBuffer(uniformbuffer_t *buffer, unsigned int ubMaxElements, unsigned int maxPointers);
 
 void ubSetUniform(uniformbuffer_t *buffer, int idx, const void *data, size_t size);
 

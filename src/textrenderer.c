@@ -965,7 +965,7 @@ void trDrawString(bitmap_t *bitmap, const char *str, int len, int x, int y, int 
                     for(int k=0; k<scale; k++) {
 
                         if(digit == 1) {
-                            pixel_t *pixel = bmGetPixelAt(bitmap, cx + sx*scale + j, cy + sy*scale + k + yOffset*scale);
+                            pixel_t *pixel = bmGetPixelAt(bitmap, cx + sx*scale + j, cy + sy*scale + k + yOffset*scale, 0);
                             if(!pixel) {
                                 continue;
                             }

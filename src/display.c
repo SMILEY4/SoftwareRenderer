@@ -45,7 +45,7 @@ void displayFunc() {
     clock_t start, end;
     start = clock();
 
-    bmClear(displayBufferCurrent, clearR, clearG, clearB);
+    bmClear(displayBufferCurrent, clearR, clearG, clearB, 0.0f);
     (*updateFunction)(displayBufferCurrent);
     inUpdate();
 
@@ -160,7 +160,7 @@ void dpSetExitFunc( void (*f)(void) ) {
 
 
 void dpUseLowRes() {
-    bmClear(displayBufferCurrent, clearR, clearG, clearB);
+    bmClear(displayBufferCurrent, clearR, clearG, clearB, 0.0f);
     displayBufferCurrent = &displayBufferLow;
     useLowResBuffer = 1;
 }
@@ -169,7 +169,7 @@ void dpUseLowRes() {
 
 
 void dpUseFullRes() {
-    bmClear(displayBufferCurrent, clearR, clearG, clearB);
+    bmClear(displayBufferCurrent, clearR, clearG, clearB, 0.0f);
     displayBufferCurrent = &displayBufferFull;
     useLowResBuffer = 0;
 }

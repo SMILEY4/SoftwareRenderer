@@ -75,7 +75,7 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float
 
     while(true) {
 
-        pixel_t *pixel = bmGetPixelAt(bitmap, currentX, currentY);
+        pixel_t *pixel = bmGetPixelAt(bitmap, currentX, currentY, 0);
         if(pixel) {
             pixel->r = r;
             pixel->g = g;
