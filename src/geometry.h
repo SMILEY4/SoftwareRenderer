@@ -54,6 +54,10 @@ void vecRotate(vec_t *dst, vec_t * vec, vec_t *axis, float angle);
 
 float vecAngle(vec_t *a, vec_t *b);
 
+void vecReflect(vec_t *dst, vec_t *i, vec_t *n);
+
+void vecRefract(vec_t *dst, vec_t *i, vec_t *n, float eta);
+
 void vecPerspectiveDivide(vec_t *dst, vec_t *src);
 
 
@@ -81,6 +85,8 @@ void matSetScale(matrix_t *mat, float x, float y, float z);
 
 void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar);
 
+void matSetInvPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar);
+
 void matSetOrthographic(matrix_t *mat, float left, float right, float bottom, float top, float near, float far);
 
 void matMul(matrix_t *dst, matrix_t *left, matrix_t *right);
@@ -96,7 +102,6 @@ void matInv(matrix_t *dst, matrix_t *src);
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat);
 
 void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up);
-
 
 
 

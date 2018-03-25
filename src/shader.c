@@ -150,6 +150,7 @@ void fshShadowPass(camera_t *camera, model_t *model, shader_t *shader, pixel_t *
  * u1: mvp_shadow
  * u2: mdlTransform
  * p0: camera_shadow
+ * p1: skybox
  * */
 
 
@@ -230,6 +231,7 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     vec_t iplWorldPos = iplAttribs[1];
     camera_t *cameraShadow = (camera_t*)ubGetPoiner(uniformbuffer, 0);
     bitmap_t *shadowmap = cameraShadow->rendertargets+0;
+    bitmap_t *skybox = (bitmap_t*)ubGetPoiner(uniformbuffer, 1);
 
     // calculate light dir  (world pos -> light pow)
     vec_t L;
@@ -268,6 +270,15 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     vec_t N;
     matTransform(&N, &Nm, &TBN0);
     vecNormalize(&N, &N);
+
+
+    // calc reflection
+    vec_t R;
+    vecReflect(&R, &V, &N);
+    R.w = 0.0;
+    vecNormalize(&R, &R);
+
+    pixel_t *pxRefl = bmGetPixelLongLat(skybox, R.x, R.y, R.z, 1);
 
 
     // calculate shadow
@@ -317,7 +328,7 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
 
     // calculate shading
     vec_t ambient = {0.2f, 0.2f, 0.3f, 0.0f};
-    vec_t lightColor = {1.3f, 1.2f, 1.0f, 1.2f};
+    vec_t lightColor = {1.3f, 1.2f, 1.0f, 0.6f};
 
     pixel_t *pxDiffuse = bmGetPixelUV(model->textures+0, iplUV->x, iplUV->y, 1);
 
@@ -336,9 +347,9 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
 
 
     // final color
-    pixel->r = fmaxf(0.0f, fminf(finalColor.x, 1.0f));
-    pixel->g = fmaxf(0.0f, fminf(finalColor.y, 1.0f));
-    pixel->b = fmaxf(0.0f, fminf(finalColor.z, 1.0f));
+    pixel->r = fmaxf(0.0f, fminf(finalColor.x + pxRefl->r*0.1f, 1.0f));
+    pixel->g = fmaxf(0.0f, fminf(finalColor.y + pxRefl->g*0.1f, 1.0f));
+    pixel->b = fmaxf(0.0f, fminf(finalColor.z + pxRefl->b*0.1f, 1.0f));
     pixel->a = 1.0;
 
 

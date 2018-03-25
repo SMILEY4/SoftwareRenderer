@@ -11,7 +11,7 @@
 char *title;
 
 float deltaTime;
-float clearR, clearG, clearB;
+float clearR, clearG, clearB, clearA;
 
 bitmap_t displayBufferFull;
 bitmap_t displayBufferLow;
@@ -45,7 +45,7 @@ void displayFunc() {
     clock_t start, end;
     start = clock();
 
-    bmClear(displayBufferCurrent, clearR, clearG, clearB, 0.0f);
+    bmClear(displayBufferCurrent, clearR, clearG, clearB, clearA);
     (*updateFunction)(displayBufferCurrent);
     inUpdate();
 
@@ -157,6 +157,12 @@ void dpSetExitFunc( void (*f)(void) ) {
 }
 
 
+void dpSetBackgroundColor(float r, float g, float b, float a) {
+    clearR = r;
+    clearG = g;
+    clearB = b;
+    clearA = a;
+}
 
 
 void dpUseLowRes() {

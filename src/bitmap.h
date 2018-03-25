@@ -31,6 +31,8 @@ pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y, int wrap);
 
 pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v, int wrap);
 
+pixel_t *bmGetPixelLongLat(bitmap_t *bitmap, float rx, float ry, float rz, int wrap);
+
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src);
 
 void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale);

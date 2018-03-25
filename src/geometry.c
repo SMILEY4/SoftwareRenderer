@@ -163,6 +163,24 @@ float vecAngle(vec_t *a, vec_t *b) {
 
 
 
+void vecReflect(vec_t *dst, vec_t *i, vec_t *n) {
+    const float NdotI = vecDot(n, i);
+    const float x = i->x - 2.0f * NdotI * n->x;
+    const float y = i->y - 2.0f * NdotI * n->y;
+    const float z = i->z - 2.0f * NdotI * n->z;
+    dst->x = x;
+    dst->y = y;
+    dst->z = z;
+}
+
+
+
+
+void vecRefract(vec_t *dst, vec_t *i, vec_t *n, float eta) {
+}
+
+
+
 void vecPerspectiveDivide(vec_t *dst, vec_t *src) {
     dst->x = src->x / src->w;
     dst->y = src->y / src->w;
@@ -309,6 +327,18 @@ void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear,
 
 
 
+void matSetInvPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
+    float tanHalfFOV = tanf(fov/2.0f);
+    float zRange = zNear - zFar;
+    mat->m[0][0] = tanHalfFOV*aspectRatio;       mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
+    mat->m[1][0] = 0;                            mat->m[1][1] = tanHalfFOV;                   mat->m[1][2] = 0;                            mat->m[1][3] = 0;
+    mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = 0;                            mat->m[2][3] = 1;
+    mat->m[3][0] = 0;                            mat->m[3][1] = 0;                            mat->m[3][2] = zRange/(2.0f*zFar*zNear);     mat->m[3][3] = (zFar+zNear)/(2.0f*zFar*zNear);
+}
+
+
+
+
 void matSetOrthographic(matrix_t *mat, float left, float right, float bottom, float top, float near, float far) {
     float width = right - left;
     float height = top - bottom;
@@ -365,31 +395,58 @@ void matTranspose(matrix_t *dst, matrix_t *src) {
 
 
 float matDet(matrix_t *mat) {
-    return
-          mat->m[0][3] * mat->m[2][2] * mat->m[1][1] * mat->m[0][0]
-        - mat->m[0][2] * mat->m[3][3] * mat->m[1][1] * mat->m[0][0]
-        - mat->m[0][3] * mat->m[1][1] * mat->m[2][2] * mat->m[0][0]
-        + mat->m[0][1] * mat->m[3][3] * mat->m[2][2] * mat->m[0][0]
-        + mat->m[0][2] * mat->m[1][1] * mat->m[3][3] * mat->m[0][0]
-        - mat->m[0][1] * mat->m[2][2] * mat->m[3][3] * mat->m[0][0]
-        - mat->m[0][3] * mat->m[2][2] * mat->m[0][0] * mat->m[1][1]
-        + mat->m[0][2] * mat->m[3][3] * mat->m[0][0] * mat->m[1][1]
-        + mat->m[0][3] * mat->m[0][0] * mat->m[2][2] * mat->m[1][1]
-        - mat->m[0][0] * mat->m[3][3] * mat->m[2][2] * mat->m[1][1]
-        - mat->m[0][2] * mat->m[0][0] * mat->m[3][3] * mat->m[1][1]
-        + mat->m[0][0] * mat->m[2][2] * mat->m[3][3] * mat->m[1][1]
-        + mat->m[0][3] * mat->m[1][1] * mat->m[0][0] * mat->m[2][2]
-        - mat->m[0][1] * mat->m[3][3] * mat->m[0][0] * mat->m[2][2]
-        - mat->m[0][3] * mat->m[0][0] * mat->m[1][1] * mat->m[2][2]
-        + mat->m[0][0] * mat->m[3][3] * mat->m[1][1] * mat->m[2][2]
-        + mat->m[0][1] * mat->m[0][0] * mat->m[3][3] * mat->m[2][2]
-        - mat->m[0][0] * mat->m[1][1] * mat->m[3][3] * mat->m[2][2]
-        - mat->m[0][2] * mat->m[1][1] * mat->m[0][0] * mat->m[3][3]
-        + mat->m[0][1] * mat->m[2][2] * mat->m[0][0] * mat->m[3][3]
-        + mat->m[0][2] * mat->m[0][0] * mat->m[1][1] * mat->m[3][3]
-        - mat->m[0][0] * mat->m[2][2] * mat->m[1][1] * mat->m[3][3]
-        - mat->m[0][1] * mat->m[0][0] * mat->m[2][2] * mat->m[3][3]
-        + mat->m[0][0] * mat->m[1][1] * mat->m[2][2] * mat->m[3][3];
+
+    float f =   mat->m[0][0] * ( (mat->m[1][1]*mat->m[2][2]*mat->m[3][3] + mat->m[1][2]*mat->m[2][3]*mat->m[3][1] + mat->m[1][3]*mat->m[2][1]*mat->m[3][2])
+                               - mat->m[1][3] * mat->m[2][2] * mat->m[3][1]
+                               - mat->m[1][1] * mat->m[2][3] * mat->m[3][2]
+                               - mat->m[1][2] * mat->m[2][1] * mat->m[3][3]
+                             );
+
+    f -=        mat->m[0][1] * ( (mat->m[1][0]*mat->m[2][2]*mat->m[3][3] + mat->m[1][2]*mat->m[2][3]*mat->m[3][0] + mat->m[1][3]*mat->m[2][0]*mat->m[3][2])
+                               - mat->m[1][3] * mat->m[2][2] * mat->m[3][0]
+                               - mat->m[1][0] * mat->m[2][3] * mat->m[3][2]
+                               - mat->m[1][2] * mat->m[2][0] * mat->m[3][3]
+                               );
+
+    f +=        mat->m[0][2] * ( (mat->m[1][0]*mat->m[2][1]*mat->m[3][3] + mat->m[1][1]*mat->m[2][3]*mat->m[3][0] + mat->m[1][3]*mat->m[2][0]*mat->m[3][1])
+                                 - mat->m[1][3] * mat->m[2][1] * mat->m[3][0]
+                                 - mat->m[1][0] * mat->m[2][3] * mat->m[3][1]
+                                 - mat->m[1][1] * mat->m[2][0] * mat->m[3][3]
+                               );
+
+    f -=        mat->m[0][3] * ( (mat->m[1][0]*mat->m[2][1]*mat->m[3][2] + mat->m[1][1]*mat->m[2][2]*mat->m[3][0] + mat->m[1][2]*mat->m[2][0]*mat->m[3][1])
+                                 - mat->m[1][2] * mat->m[2][1] * mat->m[3][0]
+                                 - mat->m[1][0] * mat->m[2][2] * mat->m[3][1]
+                                 - mat->m[1][1] * mat->m[2][0] * mat->m[3][2]
+    );
+    
+    return f;
+
+//    return
+//          mat->m[0][3] * mat->m[2][2] * mat->m[1][1] * mat->m[0][0]
+//        - mat->m[0][2] * mat->m[3][3] * mat->m[1][1] * mat->m[0][0]
+//        - mat->m[0][3] * mat->m[1][1] * mat->m[2][2] * mat->m[0][0]
+//        + mat->m[0][1] * mat->m[3][3] * mat->m[2][2] * mat->m[0][0]
+//        + mat->m[0][2] * mat->m[1][1] * mat->m[3][3] * mat->m[0][0]
+//        - mat->m[0][1] * mat->m[2][2] * mat->m[3][3] * mat->m[0][0]
+//        - mat->m[0][3] * mat->m[2][2] * mat->m[0][0] * mat->m[1][1]
+//        + mat->m[0][2] * mat->m[3][3] * mat->m[0][0] * mat->m[1][1]
+//        + mat->m[0][3] * mat->m[0][0] * mat->m[2][2] * mat->m[1][1]
+//        - mat->m[0][0] * mat->m[3][3] * mat->m[2][2] * mat->m[1][1]
+//        - mat->m[0][2] * mat->m[0][0] * mat->m[3][3] * mat->m[1][1]
+//        + mat->m[0][0] * mat->m[2][2] * mat->m[3][3] * mat->m[1][1]
+//        + mat->m[0][3] * mat->m[1][1] * mat->m[0][0] * mat->m[2][2]
+//        - mat->m[0][1] * mat->m[3][3] * mat->m[0][0] * mat->m[2][2]
+//        - mat->m[0][3] * mat->m[0][0] * mat->m[1][1] * mat->m[2][2]
+//        + mat->m[0][0] * mat->m[3][3] * mat->m[1][1] * mat->m[2][2]
+//        + mat->m[0][1] * mat->m[0][0] * mat->m[3][3] * mat->m[2][2]
+//        - mat->m[0][0] * mat->m[1][1] * mat->m[3][3] * mat->m[2][2]
+//        - mat->m[0][2] * mat->m[1][1] * mat->m[0][0] * mat->m[3][3]
+//        + mat->m[0][1] * mat->m[2][2] * mat->m[0][0] * mat->m[3][3]
+//        + mat->m[0][2] * mat->m[0][0] * mat->m[1][1] * mat->m[3][3]
+//        - mat->m[0][0] * mat->m[2][2] * mat->m[1][1] * mat->m[3][3]
+//        - mat->m[0][1] * mat->m[0][0] * mat->m[2][2] * mat->m[3][3]
+//        + mat->m[0][0] * mat->m[1][1] * mat->m[2][2] * mat->m[3][3];
 }
 
 
@@ -424,7 +481,6 @@ void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up) {
 
     vec_t xaxis, yaxis, zaxis;
 
-//    vecSub(&zaxis, pos, target);
     vecSub(&zaxis, target, pos);
     vecNormalize(&zaxis, &zaxis);
 
@@ -448,6 +504,71 @@ void matSetLookAt(matrix_t *dst, vec_t *pos, vec_t *target, vec_t *up) {
     matMul(dst, &orientation, &translation);
 
 }
+
+
+
+float det3x3(float t00, float t01, float t02,
+             float t10, float t11, float t12,
+             float t20, float t21, float t22)
+{
+    return   t00 * (t11 * t22 - t12 * t21)
+             + t01 * (t12 * t20 - t10 * t22)
+             + t02 * (t10 * t21 - t11 * t20);
+}
+
+
+
+
+void matInv(matrix_t *dst, matrix_t *src) {
+    const float det = matDet(src);
+    if(det == 0) {
+        return;
+    }
+
+    const float t00 =  det3x3(src->m[1][1], src->m[1][2], src->m[1][3], src->m[2][1], src->m[2][2], src->m[2][3], src->m[3][1], src->m[3][2], src->m[3][3]);
+    const float t01 = -det3x3(src->m[1][0], src->m[1][2], src->m[1][3], src->m[2][0], src->m[2][2], src->m[2][3], src->m[3][0], src->m[3][2], src->m[3][3]);
+    const float t02 =  det3x3(src->m[1][0], src->m[1][1], src->m[1][3], src->m[2][0], src->m[2][1], src->m[2][3], src->m[3][0], src->m[3][1], src->m[3][3]);
+    const float t03 = -det3x3(src->m[1][0], src->m[1][1], src->m[1][2], src->m[2][0], src->m[2][1], src->m[2][2], src->m[3][0], src->m[3][1], src->m[3][2]);
+
+    const float t10 = -det3x3(src->m[0][1], src->m[0][2], src->m[0][3], src->m[2][1], src->m[2][2], src->m[2][3], src->m[3][1], src->m[3][2], src->m[3][3]);
+    const float t11 =  det3x3(src->m[0][0], src->m[0][2], src->m[0][3], src->m[2][0], src->m[2][2], src->m[2][3], src->m[3][0], src->m[3][2], src->m[3][3]);
+    const float t12 = -det3x3(src->m[0][0], src->m[0][1], src->m[0][3], src->m[2][0], src->m[2][1], src->m[2][3], src->m[3][0], src->m[3][1], src->m[3][3]);
+    const float t13 =  det3x3(src->m[0][0], src->m[0][1], src->m[0][2], src->m[2][0], src->m[2][1], src->m[2][2], src->m[3][0], src->m[3][1], src->m[3][2]);
+
+    const float t20 =  det3x3(src->m[0][1], src->m[0][2], src->m[0][3], src->m[1][1], src->m[1][2], src->m[1][3], src->m[3][1], src->m[3][2], src->m[3][3]);
+    const float t21 = -det3x3(src->m[0][0], src->m[0][2], src->m[0][3], src->m[1][0], src->m[1][2], src->m[1][3], src->m[3][0], src->m[3][2], src->m[3][3]);
+    const float t22 =  det3x3(src->m[0][0], src->m[0][1], src->m[0][3], src->m[1][0], src->m[1][1], src->m[1][3], src->m[3][0], src->m[3][1], src->m[3][3]);
+    const float t23 = -det3x3(src->m[0][0], src->m[0][1], src->m[0][2], src->m[1][0], src->m[1][1], src->m[1][2], src->m[3][0], src->m[3][1], src->m[3][2]);
+
+    const float t30 = -det3x3(src->m[0][1], src->m[0][2], src->m[0][3], src->m[1][1], src->m[1][2], src->m[1][3], src->m[2][1], src->m[2][2], src->m[2][3]);
+    const float t31 =  det3x3(src->m[0][0], src->m[0][2], src->m[0][3], src->m[1][0], src->m[1][2], src->m[1][3], src->m[2][0], src->m[2][2], src->m[2][3]);
+    const float t32 = -det3x3(src->m[0][0], src->m[0][1], src->m[0][3], src->m[1][0], src->m[1][1], src->m[1][3], src->m[2][0], src->m[2][1], src->m[2][3]);
+    const float t33 =  det3x3(src->m[0][0], src->m[0][1], src->m[0][2], src->m[1][0], src->m[1][1], src->m[1][2], src->m[2][0], src->m[2][1], src->m[2][2]);
+
+    dst->m[0][0] = t00 / det;
+    dst->m[1][1] = t11 / det;
+    dst->m[2][2] = t22 / det;
+    dst->m[3][3] = t33 / det;
+
+    dst->m[0][1] = t10 / det;
+    dst->m[1][0] = t01 / det;
+    dst->m[2][0] = t02 / det;
+    dst->m[0][2] = t20 / det;
+
+    dst->m[1][2] = t21 / det;
+    dst->m[2][1] = t12 / det;
+    dst->m[0][3] = t30 / det;
+    dst->m[3][0] = t03 / det;
+
+    dst->m[1][3] = t31 / det;
+    dst->m[3][1] = t13 / det;
+    dst->m[3][2] = t23 / det;
+    dst->m[2][3] = t32 / det;
+
+}
+
+
+
 
 
 

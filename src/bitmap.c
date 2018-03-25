@@ -51,6 +51,18 @@ pixel_t *bmGetPixelUV(bitmap_t *bitmap, float u, float v, int wrap) {
 
 
 
+pixel_t *bmGetPixelLongLat(bitmap_t *bitmap, float rx, float ry, float rz, int wrap) {
+    const float F_PI = (float)M_PI;
+    float sx = (atan2f(rz, rx) + F_PI) / (2.0f * F_PI);
+    float sy = acosf(-ry) / F_PI;
+    sx *= bitmap->width;
+    sy *= bitmap->height;
+    return bmGetPixelAt(bitmap, (int)sx, (int)sy, wrap);
+}
+
+
+
+
 void bmCopyBitmap(bitmap_t *dst, bitmap_t *src) {
     if(dst->width != src->width || dst->height != src->height) {
         return;

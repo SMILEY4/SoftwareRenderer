@@ -15,6 +15,8 @@ void dpSetUpdateFunc( void (*func)(bitmap_t *bitmap) );
 
 void dpSetExitFunc( void (*f)(void) );
 
+void dpSetBackgroundColor(float r, float g, float b, float a);
+
 void dpUseLowRes();
 
 void dpUseFullRes();
