@@ -1,6 +1,10 @@
 #include "rendercontext.h"
 #include "bresenham.h"
 #include "model.h"
+#include "stopwatch.h"
+#include "bitmap.h"
+#include "geometry.h"
+#include "input.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -36,76 +40,99 @@ void rcFreeRenderData(renderdata_t *renderdata) {
 
 // RASTERIZER
 
-void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
+
+
+void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vertex_t *v0, vertex_t *v1, vertex_t *v2, vec_t *iplAttribs) {
+
+    sampleStart("prepRast");
 
     bitmap_t *rendertarget = camera->rendertargets+0;
-    vec_t *iplAttribs = NULL;
-    if(v0->nAttribs > 0) {
-        iplAttribs = calloc((size_t)v0->nAttribs, sizeof(vec_t));
-    }
+    const int rtWidth = rendertarget->width;
+    const int rtHeight = rendertarget->height;
 
     // calculate bounding
     float minY = v0->position.y;
-    minY = fminf(minY, v1->position.y);
-    minY = fminf(minY, v2->position.y);
-    minY = fminf(minY, rendertarget->height-1);
-    minY = fmaxf(minY, 0);
+    minY = min(minY, v1->position.y);
+    minY = min(minY, v2->position.y);
+    minY = min(minY, rtWidth-1);
+    minY = max(minY, 0.0f);
 
     float maxY = v0->position.y;
-    maxY = fmaxf(maxY, v1->position.y);
-    maxY = fmaxf(maxY, v2->position.y);
-    maxY = fminf(maxY, rendertarget->height-1);
-    minY = fmaxf(minY, 0);
+    maxY = max(maxY, v1->position.y);
+    maxY = max(maxY, v2->position.y);
+    maxY = min(maxY, rtHeight-1);
+    minY = max(minY, 0.0f);
+
+    const int yStart = (int)floorf(minY);
+    const int yEnd = (int)ceilf(maxY);
 
     // clear scanbuffer
-    for(int i=(int)floorf(minY); i<=(int)ceilf(maxY); i++) {
+    for(int i=yStart; i<yEnd; i++) {
         rendertarget->scanbufferMin[i] = rendertarget->width+100;
         rendertarget->scanbufferMax[i] = -(rendertarget->width+100);
     }
 
     // draw scanbuffer
-    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rendertarget->height, (int)v0->position.x, (int)v0->position.y, (int)v1->position.x, (int)v1->position.y);
-    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rendertarget->height, (int)v0->position.x, (int)v0->position.y, (int)v2->position.x, (int)v2->position.y);
-    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rendertarget->height, (int)v1->position.x, (int)v1->position.y, (int)v2->position.x, (int)v2->position.y);
+    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rtHeight, (int)v0->position.x, (int)v0->position.y, (int)v1->position.x, (int)v1->position.y);
+    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rtHeight, (int)v0->position.x, (int)v0->position.y, (int)v2->position.x, (int)v2->position.y);
+    bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rtHeight, (int)v1->position.x, (int)v1->position.y, (int)v2->position.x, (int)v2->position.y);
+
+    sampleEnd("prepRast");
+    sampleStart("doRast");
+
 
     // rasterize triangle
-    vec_t texelCoords, baryCoords;
-    for(int y=(int)floorf(minY); y<=(int)ceilf(maxY); y++) {
+    static vec_t texelCoords;
+    static vec_t baryCoords;
+    static vec_t pcBary;
+    static vec_t iplUV, iplNrm, iplClr;
 
-        int startX = (int)fmaxf(rendertarget->scanbufferMin[y]-1, 0.0f);
-        int endX   = (int)fminf(rendertarget->scanbufferMax[y]+1, rendertarget->width);
+    const int yd = yEnd - yStart;
+    for(int ys=0; ys<=yd; ys++) {
+        const int y = ys+yStart;
 
-        for(int x=startX; x<=endX; x++) {
+
+        const int xStart = max(rendertarget->scanbufferMin[y]-1, 0);
+        const int xEnd   = min(rendertarget->scanbufferMax[y]+1, rtWidth);
+
+        const int xd = xEnd - xStart;
+        for(int xs=0; xs<=xd; xs++) {
+            const int x = xs+xStart;
+
+            sampleStart("procPx");
 
             texelCoords = (vec_t){x+0.5f, y+0.5f, 0, 0};
             barycentric(&baryCoords, &v0->position, &v1->position, &v2->position, &texelCoords);
 
             // test if sample is part of triangle
             if(baryCoords.x < 0 || baryCoords.y < 0 || baryCoords.z < 0) {
+                sampleEnd("procPx");
                 continue;
             }
 
             // get pixel
-            pixel_t *pixel = bmGetPixelAt(rendertarget, x, y, 0);
-            if(!pixel) { continue; }
+            pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
+            if(!pixel) {
+                sampleEnd("procPx");
+                continue;
+            }
 
             // calc perspective correct bary coords
-            float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
-            vec_t pcBary = {0,0,0,0};
+            const float oneOverW = baryCoords.x/v0->position.w + baryCoords.y/v1->position.w + baryCoords.z/v2->position.w;
             baryCorrectPerspective(&baryCoords, v0->position.w, v1->position.w, v2->position.w, oneOverW, &pcBary);
 
             // depth test
             vec_t iplPos;
             interpolateBary(&iplPos, &v0->position, &v1->position, &v2->position, &baryCoords);
-            float zPixel = pixel->z;
+            const float zPixel = pixel->z;
             if(zPixel < iplPos.z) {
+                sampleEnd("procPx");
                 continue;
             }
             pixel->z = iplPos.z;
             pixel->triangleID = v0->triangleID;
 
             // interpolate vertex attributes
-            vec_t iplUV, iplNrm, iplClr;
             interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
             interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
             interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
@@ -116,16 +143,17 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, unifo
                 }
             }
 
+            sampleEnd("procPx");
+
             // call fragment shader
             shader->fsh(camera, model, shader, pixel, &iplPos, &iplUV, &iplNrm, &iplClr, iplAttribs, uniformbuffer);
-
+            pixel->writeCount++;
         }
     }
 
-    free(iplAttribs);
+    sampleEnd("doRast");
 
 }
-
 
 
 
@@ -176,6 +204,13 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
 
 void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer) {
 
+    sampleStart("drawModel");
+
+    vec_t *iplAttribs = NULL;
+    if(model->nVertexAttribs > 0) {
+        iplAttribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+    }
+
     // get rendertarget
     bitmap_t *rendertarget = camera->rendertargets+0;
     float rtWidth = rendertarget->width;
@@ -196,7 +231,11 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
     shader->psh(camera, model, shader, uniformbuffer);
 
     // for each triangle
-    for(int i=0; i<model->nTriangles; i++) {
+    const int nTris = model->nTriangles;
+    for(int i=0; i<nTris; i++) {
+
+        sampleStart("procVertex");
+
         triangle_t *triangle = model->triangles + i;
 
         // get vertices
@@ -220,6 +259,7 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
 
         // cull depth
         if ((v0.position.z < 0 || v0.position.z > 1) || (v1.position.z < 0 || v1.position.z > 1) || (v2.position.z < 0 || v2.position.z > 1)) {
+            sampleEnd("procVertex");
             continue;
         }
 
@@ -229,26 +269,39 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
         if ((v1.position.x < 0 || v1.position.x > rtWidth) || (v1.position.y < 0 || v1.position.y > rtHeight)) { nOutside++; }
         if ((v2.position.x < 0 || v2.position.x > rtWidth) || (v2.position.y < 0 || v2.position.y > rtHeight)) { nOutside++; }
         if (nOutside == 3) {
+            sampleEnd("procVertex");
             continue;
         }
 
         // cull backspace
         if (cullBackface(&v0.position, &v1.position, &v2.position)) {
+            sampleEnd("procVertex");
             continue;
         }
 
+        sampleEnd("procVertex");
+
         // rasterize
-        rasterizeTriangle(camera, model, shader, uniformbuffer, &v0, &v1, &v2);
+        sampleStart("rastTri");
 
+        rasterizeTriangle(camera, model, shader, uniformbuffer, &v0, &v1, &v2, iplAttribs);
 
-//        bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v1.position.x, (int) v1.position.y, 1.0, 1.0, 1.0);
-//        bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
-//        bhDrawLine(rendertarget, (int) v1.position.x, (int) v1.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
+        sampleEnd("rastTri");
+
+        if(inGetKeyState('r') == IN_DOWN) {
+            bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v1.position.x, (int) v1.position.y, 1.0, 1.0, 1.0);
+            bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
+            bhDrawLine(rendertarget, (int) v1.position.x, (int) v1.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
+        }
+
     }
 
+    free(iplAttribs);
     free(v0.attribs);
     free(v1.attribs);
     free(v2.attribs);
+
+    sampleEnd("drawModel");
 
 }
 
@@ -258,6 +311,7 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
 void rcDrawRenderData(renderdata_t *renderdata) {
     for(int i=0; i<renderdata->nObjects; i++) {
         rcDrawModel(renderdata->cameras[i], renderdata->objects[i], renderdata->shaders[i], &renderdata->buffers[i]);
+        return;
     }
 }
 

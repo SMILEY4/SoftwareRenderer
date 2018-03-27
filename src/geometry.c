@@ -58,7 +58,7 @@ float vecCross2D(vec_t *a, vec_t *b) {
 
 
 float vecLength(vec_t *v) {
-    float len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
+    const float len2 = (v->x * v->x) + (v->y * v->y) + (v->z * v->z) + (v->w * v->w);
     return sqrtf(len2);
 }
 
@@ -126,8 +126,8 @@ void vecScale(vec_t *dst, vec_t *vec, float s) {
 
 
 void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
-    float sinAngle = sinf(-angle);
-    float cosAngle = cosf(-angle);
+    const float sinAngle = sinf(-angle);
+    const float cosAngle = cosf(-angle);
 
     vec_t v0, v1;
     vecScale(&v0, axis, sinAngle);
@@ -139,7 +139,7 @@ void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
     vec_t v3;
     vecScale(&v3, axis, 1-cosAngle);
 
-    float f0 = vecDot(vec, &v3);
+    const float f0 = vecDot(vec, &v3);
 
     vec_t v4;
     vecScale(&v4, axis, f0);
@@ -156,7 +156,7 @@ void vecRotate(vec_t *dst, vec_t *vec, vec_t *axis, float angle) {
 float vecAngle(vec_t *a, vec_t *b) {
     const float lenAdd = sqrtf( (a->x+b->x)*(a->x+b->x) + (a->y+b->y)*(a->y+b->y) + (a->z+b->z)*(a->z+b->z) );
     const float lenSub = sqrtf( (a->x-b->x)*(a->x-b->x) + (a->y-b->y)*(a->y-b->y) + (a->z-b->z)*(a->z-b->z) );
-    float angleRad = 2.0f * atanf(lenSub / lenAdd);
+    const float angleRad = 2.0f * atanf(lenSub / lenAdd);
     return (float)((angleRad) * 180.0 / M_PI);
 }
 
@@ -176,16 +176,12 @@ void vecReflect(vec_t *dst, vec_t *i, vec_t *n) {
 
 
 
-void vecRefract(vec_t *dst, vec_t *i, vec_t *n, float eta) {
-}
-
-
-
 void vecPerspectiveDivide(vec_t *dst, vec_t *src) {
-    dst->x = src->x / src->w;
-    dst->y = src->y / src->w;
-    dst->z = src->z / src->w;
-    dst->w = src->w;
+    const float w = src->w;
+    dst->x = src->x / w;
+    dst->y = src->y / w;
+    dst->z = src->z / w;
+    dst->w = w;
 }
 
 
@@ -236,8 +232,8 @@ void matSetTranslation(matrix_t *mat, float x, float y, float z) {
 
 
 void matSetRotationAngle(matrix_t *mat, float x, float y, float z, float angle) {
-    float s = sinf(angle);
-    float c = cosf(angle);
+    const float s = sinf(angle);
+    const float c = cosf(angle);
     mat->m[0][0] = c+x*x*(1-c);         mat->m[0][1] = x*y*(1-c)-z*s;        mat->m[0][2] = x*z*(1-c)+y*s;      mat->m[0][3] = 0;
     mat->m[1][0] = y*x*(1-c)+z*s;       mat->m[1][1] = c+y*y*(1-c);          mat->m[1][2] = y*z*(1-c)-x*s;      mat->m[1][3] = 0;
     mat->m[2][0] = z*x*(1-c)-y*s;       mat->m[2][1] = z*y*(1-c)+x*s;        mat->m[2][2] = c+z*z*(1-c);        mat->m[2][3] = 0;
@@ -316,8 +312,8 @@ void matSetScale(matrix_t *mat, float x, float y, float z) {
 
 
 void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
-    float tanHalfFOV = tanf(fov/2.0f);
-    float zRange = zNear - zFar;
+    const float tanHalfFOV = tanf(fov/2.0f);
+    const float zRange = zNear - zFar;
     mat->m[0][0] = 1.0f/(tanHalfFOV*aspectRatio);mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
     mat->m[1][0] = 0;                            mat->m[1][1] = 1.0f/tanHalfFOV;              mat->m[1][2] = 0;                            mat->m[1][3] = 0;
     mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = (-zNear -zFar)/zRange;        mat->m[2][3] = 2 * zFar * zNear / zRange;
@@ -328,8 +324,8 @@ void matSetPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear,
 
 
 void matSetInvPerspective(matrix_t *mat, float fov, float aspectRatio, float zNear, float zFar) {
-    float tanHalfFOV = tanf(fov/2.0f);
-    float zRange = zNear - zFar;
+    const float tanHalfFOV = tanf(fov/2.0f);
+    const float zRange = zNear - zFar;
     mat->m[0][0] = tanHalfFOV*aspectRatio;       mat->m[0][1] = 0;                            mat->m[0][2] = 0;                            mat->m[0][3] = 0;
     mat->m[1][0] = 0;                            mat->m[1][1] = tanHalfFOV;                   mat->m[1][2] = 0;                            mat->m[1][3] = 0;
     mat->m[2][0] = 0;                            mat->m[2][1] = 0;                            mat->m[2][2] = 0;                            mat->m[2][3] = 1;
@@ -340,9 +336,9 @@ void matSetInvPerspective(matrix_t *mat, float fov, float aspectRatio, float zNe
 
 
 void matSetOrthographic(matrix_t *mat, float left, float right, float bottom, float top, float near, float far) {
-    float width = right - left;
-    float height = top - bottom;
-    float depth = far - near;
+    const float width = right - left;
+    const float height = top - bottom;
+    const float depth = far - near;
 
     mat->m[0][0] = 2/width;           mat->m[0][1] = 0;                 mat->m[0][2] = 0;                 mat->m[0][3] = -(right + left)/width;
     mat->m[1][0] = 0;                 mat->m[1][1] = 2/height;          mat->m[1][2] = 0;                 mat->m[1][3] = -(top + bottom)/height;
@@ -421,42 +417,20 @@ float matDet(matrix_t *mat) {
     );
     
     return f;
-
-//    return
-//          mat->m[0][3] * mat->m[2][2] * mat->m[1][1] * mat->m[0][0]
-//        - mat->m[0][2] * mat->m[3][3] * mat->m[1][1] * mat->m[0][0]
-//        - mat->m[0][3] * mat->m[1][1] * mat->m[2][2] * mat->m[0][0]
-//        + mat->m[0][1] * mat->m[3][3] * mat->m[2][2] * mat->m[0][0]
-//        + mat->m[0][2] * mat->m[1][1] * mat->m[3][3] * mat->m[0][0]
-//        - mat->m[0][1] * mat->m[2][2] * mat->m[3][3] * mat->m[0][0]
-//        - mat->m[0][3] * mat->m[2][2] * mat->m[0][0] * mat->m[1][1]
-//        + mat->m[0][2] * mat->m[3][3] * mat->m[0][0] * mat->m[1][1]
-//        + mat->m[0][3] * mat->m[0][0] * mat->m[2][2] * mat->m[1][1]
-//        - mat->m[0][0] * mat->m[3][3] * mat->m[2][2] * mat->m[1][1]
-//        - mat->m[0][2] * mat->m[0][0] * mat->m[3][3] * mat->m[1][1]
-//        + mat->m[0][0] * mat->m[2][2] * mat->m[3][3] * mat->m[1][1]
-//        + mat->m[0][3] * mat->m[1][1] * mat->m[0][0] * mat->m[2][2]
-//        - mat->m[0][1] * mat->m[3][3] * mat->m[0][0] * mat->m[2][2]
-//        - mat->m[0][3] * mat->m[0][0] * mat->m[1][1] * mat->m[2][2]
-//        + mat->m[0][0] * mat->m[3][3] * mat->m[1][1] * mat->m[2][2]
-//        + mat->m[0][1] * mat->m[0][0] * mat->m[3][3] * mat->m[2][2]
-//        - mat->m[0][0] * mat->m[1][1] * mat->m[3][3] * mat->m[2][2]
-//        - mat->m[0][2] * mat->m[1][1] * mat->m[0][0] * mat->m[3][3]
-//        + mat->m[0][1] * mat->m[2][2] * mat->m[0][0] * mat->m[3][3]
-//        + mat->m[0][2] * mat->m[0][0] * mat->m[1][1] * mat->m[3][3]
-//        - mat->m[0][0] * mat->m[2][2] * mat->m[1][1] * mat->m[3][3]
-//        - mat->m[0][1] * mat->m[0][0] * mat->m[2][2] * mat->m[3][3]
-//        + mat->m[0][0] * mat->m[1][1] * mat->m[2][2] * mat->m[3][3];
 }
 
 
 
 
 void matTransform(vec_t *dst, vec_t *vec, matrix_t *mat) {
-    float rx = mat->m[0][0] * vec->x + mat->m[0][1] * vec->y + mat->m[0][2] * vec->z + mat->m[0][3] * vec->w;
-    float ry = mat->m[1][0] * vec->x + mat->m[1][1] * vec->y + mat->m[1][2] * vec->z + mat->m[1][3] * vec->w;
-    float rz = mat->m[2][0] * vec->x + mat->m[2][1] * vec->y + mat->m[2][2] * vec->z + mat->m[2][3] * vec->w;
-    float rw = mat->m[3][0] * vec->x + mat->m[3][1] * vec->y + mat->m[3][2] * vec->z + mat->m[3][3] * vec->w;
+    const float x = vec->x;
+    const float y = vec->y;
+    const float z = vec->z;
+    const float w = vec->w;
+    const float rx = mat->m[0][0] * x + mat->m[0][1] * y + mat->m[0][2] * z + mat->m[0][3] * w;
+    const float ry = mat->m[1][0] * x + mat->m[1][1] * y + mat->m[1][2] * z + mat->m[1][3] * w;
+    const float rz = mat->m[2][0] * x + mat->m[2][1] * y + mat->m[2][2] * z + mat->m[2][3] * w;
+    const float rw = mat->m[3][0] * x + mat->m[3][1] * y + mat->m[3][2] * z + mat->m[3][3] * w;
     dst->x = rx;
     dst->y = ry;
     dst->z = rz;
@@ -575,13 +549,29 @@ void matInv(matrix_t *dst, matrix_t *src) {
 
 
 void barycentric(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *P) {
-    vec_t V1, V2, Q;
-    vecSub(&V1, B, A);
-    vecSub(&V2, C, A);
-    vecSub(&Q , P, A);
-    dst->y = vecCross2D(&Q, &V2) / vecCross2D(&V1, &V2);
-    dst->z = vecCross2D(&V1, &Q) / vecCross2D(&V1, &V2);
+//    vec_t V1 = (vec_t){B->x-A->x, B->y-A->y, 0.0f, 0.0f};
+//    vec_t V2 = (vec_t){C->x-A->x, C->y-A->y, 0.0f, 0.0f};
+//    vec_t Q  = (vec_t){P->x-A->x, P->y-A->y, 0.0f, 0.0f};
+//    const float c12 = vecCross2D(&V1, &V2);
+//    dst->y = vecCross2D(&Q, &V2) / c12;
+//    dst->z = vecCross2D(&V1, &Q) / c12;
+//    dst->x = 1.0f - dst->y -  dst->z;
+
+    const float v1x = B->x - A->x;
+    const float v1y = B->y - A->y;
+
+    const float v2x = C->x - A->x;
+    const float v2y = C->y - A->y;
+
+    const float qx = P->x - A->x;
+    const float qy = P->y - A->y;
+
+    const float c12 = v1x * v2y - v1y * v2x;
+
+    dst->y = ( qx * v2y -  qy * v2x) / c12;
+    dst->z = (v1x *  qy - v1y *  qx) / c12;
     dst->x = 1.0f - dst->y -  dst->z;
+
 }
 
 
@@ -589,9 +579,9 @@ void baryCorrectPerspective(vec_t *bary, float w1, float w2, float w3, float oow
     static vec_t p1 = {1, 0, 0, 0};
     static vec_t p2 = {0, 1, 0, 0};
     static vec_t p3 = {0, 0, 1, 0};
-    float x = ( ((bary->x/w1)*p1.x) + ((bary->y/w2)*p2.x) + ((bary->z/w3)*p3.x) ) / oow;
-    float y = ( ((bary->x/w1)*p1.y) + ((bary->y/w2)*p2.y) + ((bary->z/w3)*p3.y) ) / oow;
-    float z = ( ((bary->x/w1)*p1.z) + ((bary->y/w2)*p2.z) + ((bary->z/w3)*p3.z) ) / oow;
+    const float x = ( ((bary->x/w1)*p1.x) + ((bary->y/w2)*p2.x) + ((bary->z/w3)*p3.x) ) / oow;
+    const float y = ( ((bary->x/w1)*p1.y) + ((bary->y/w2)*p2.y) + ((bary->z/w3)*p3.y) ) / oow;
+    const float z = ( ((bary->x/w1)*p1.z) + ((bary->y/w2)*p2.z) + ((bary->z/w3)*p3.z) ) / oow;
     dst->x = x;
     dst->y = y;
     dst->z = z;
@@ -599,15 +589,18 @@ void baryCorrectPerspective(vec_t *bary, float w1, float w2, float w3, float oow
 
 
 
-void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords) {
-    dst->x = A->x * baryCoords->x  +  B->x * baryCoords->y  +  C->x * baryCoords->z;
-    dst->y = A->y * baryCoords->x  +  B->y * baryCoords->y  +  C->y * baryCoords->z;
-    dst->z = A->z * baryCoords->x  +  B->z * baryCoords->y  +  C->z * baryCoords->z;
-    dst->w = A->w * baryCoords->x  +  B->w * baryCoords->y  +  C->w * baryCoords->z;
+inline void interpolateBary(vec_t *dst, vec_t *A, vec_t *B, vec_t *C, vec_t *baryCoords) {
+    const float bx = baryCoords->x;
+    const float by = baryCoords->y;
+    const float bz = baryCoords->z;
+    dst->x = A->x * bx  +  B->x * by  +  C->x * bz;
+    dst->y = A->y * bx  +  B->y * by  +  C->y * bz;
+    dst->z = A->z * bx  +  B->z * by  +  C->z * bz;
+    dst->w = A->w * bx  +  B->w * by  +  C->w * bz;
 }
 
 
 
-float reverseDepth(float z, float zNear, float zFar) {
+inline float reverseDepth(float z, float zNear, float zFar) {
     return (2.0f*zFar*zNear) / (zFar*(-z) + zFar + zNear*z + zNear);
 }

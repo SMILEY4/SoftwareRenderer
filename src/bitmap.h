@@ -11,6 +11,7 @@ typedef struct {
     float a;
     float z;
     int triangleID;
+    int writeCount;
 } pixel_t;
 
 
@@ -26,6 +27,8 @@ typedef struct {
 
 
 void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b);
+
+pixel_t *bmFastGetPixelAt(bitmap_t *bitmap, int x, int y);
 
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y, int wrap);
 

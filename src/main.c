@@ -3,6 +3,9 @@
 #include "rendercontext.h"
 #include "textrenderer.h"
 #include "camera.h"
+#include "stopwatch.h"
+#include "model.h"
+#include "bitmap.h"
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
@@ -156,11 +159,46 @@ void render(bitmap_t *displayBuffer) {
     if(drawShadow) {
         drawShadow = 0;
         bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f, 0.0f);
-        rcDrawRenderData(&renderdataShadowPass);
+//        rcDrawRenderData(&renderdataShadowPass);
     }
 
     // MAIN PASS
+
+//    samplesReset();
+    sampleStart("mainPass");
+
     rcDrawRenderData(&renderdataMainPass);
+
+    sampleEnd("mainPass");
+    sampelsPrintData();
+//    samplesReset();
+
+
+//    float max = 1;
+//
+//    for(int x=0; x<displayBuffer->width; x++) {
+//        for(int y=0; y<displayBuffer->height; y++) {
+//            pixel_t *px = bmGetPixelAt(displayBuffer, x, y, 0);
+//            if(px) {
+//                max = (int)fmaxf(max, px->writeCount);
+//            }
+//        }
+//    }
+//
+//
+//    for(int x=0; x<displayBuffer->width; x++) {
+//        for(int y=0; y<displayBuffer->height; y++) {
+//            pixel_t *px = bmGetPixelAt(displayBuffer, x, y, 0);
+//            if(px) {
+//                float v = (float)px->writeCount / max;
+//                px->r = v;
+//                px->g = v;
+//                px->b = v;
+//                px->a = 1.0f;
+//            }
+//        }
+//    }
+
 
 }
 
@@ -211,6 +249,7 @@ void updateFunc(bitmap_t *displayBuffer) {
             printf("color = %f %f %f %f\n", pixel->r, pixel->g, pixel->b, pixel->a);
             printf("depth = %f\n", pixel->z);
             printf("triangle = %d\n", pixel->triangleID);
+            printf("writeCount = %d\n", pixel->writeCount);
             printf("============\n");
             g_pickedTriangle = pixel->triangleID;
         } else {
@@ -258,6 +297,7 @@ void exitFunc() {
     mdlFreeModel(&modelPlane);
     camDispose(&cameraShadow);
     dpDispose();
+    samplesFreeData();
 }
 
 
@@ -265,6 +305,8 @@ void exitFunc() {
 
 
 int main(int argc, char *argv[]) {
+
+    samplesReset();
 
     dpCreate(argc, argv, WIDTH, HEIGHT, 60, 2.0f);
     dpSetBackgroundColor(0.4, 0.4, 0.4, 1.0);

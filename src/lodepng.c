@@ -630,7 +630,7 @@ static unsigned HuffmanTree_makeFromLengths2(HuffmanTree* tree)
 
     if(!error)
     {
-        /*step 1: count number of instances of each code length*/
+        /*step 1: writeCount number of instances of each code length*/
         for(bits = 0; bits != tree->numcodes; ++bits) ++blcount.data[tree->lengths[bits]];
         /*step 2: generate the nextcode m*/
         for(bits = 1; bits <= tree->maxbitlen; ++bits)
@@ -677,7 +677,7 @@ Jyrki Katajainen, Alistair Moffat, Andrew Turpin, 1995.*/
 typedef struct BPMNode
 {
     int weight; /*the sum of all weights in this chain*/
-    unsigned index; /*index of this leaf node (called "count" in the paper)*/
+    unsigned index; /*index of this leaf node (called "writeCount" in the paper)*/
     struct BPMNode* tail; /*the next nodes in this chain (null if last)*/
     int in_use;
 } BPMNode;
@@ -2996,7 +2996,7 @@ typedef struct ColorTree ColorTree;
 
 /*
 One node of a color tree
-This is the data structure used to count the number of unique colors and to get a palette
+This is the data structure used to writeCount the number of unique colors and to get a palette
 index for a color. It's like an octree, but because the alpha channel is used too, each
 node has 16 instead of 8 children.
 */

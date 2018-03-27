@@ -21,6 +21,12 @@ void bmSetPixel(bitmap_t *bitmap, int x, int y, float r, float g, float b) {
 
 
 
+pixel_t *bmFastGetPixelAt(bitmap_t *bitmap, int x, int y) {
+    return bitmap->pixels + (bitmap->width*y + x);
+}
+
+
+
 
 pixel_t *bmGetPixelAt(bitmap_t *bitmap, int x, int y, int wrap) {
 
@@ -111,6 +117,7 @@ void bmClear(bitmap_t *bitmap, float r, float g, float b, float a) {
             pixel->a = a;
             pixel->z = 100000.0f;
             pixel->triangleID = -1;
+            pixel->writeCount = 0;
         }
     }
 }

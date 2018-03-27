@@ -5,7 +5,7 @@
 #include "geometry.h"
 #include <math.h>
 #include <stdio.h>
-
+#include "stopwatch.h"
 
 vec_t poissonDisk[64];
 
@@ -82,7 +82,7 @@ void shInit() {
 
 
 
-float randFloat() {
+inline float randFloat() {
     return (float)rand() / (float)RAND_MAX;
 }
 
@@ -208,7 +208,6 @@ void vshDefault(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader, unifo
     matTransform(&vertexOut->position, &vertexIn->position, mvp);
     matTransform(&vertexOut->attribs[1], &vertexIn->position, mdlTransform);
 
-
     // normal
     matTransform(&vertexOut->normal, &vertexIn->normal, mdlTransform);
 
@@ -226,6 +225,8 @@ void vshDefault(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader, unifo
 
 void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplPos, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer) {
 
+    sampleStart("fsh");
+
     // get data
     vec_t iplPosShadow = iplAttribs[0];
     vec_t iplWorldPos = iplAttribs[1];
@@ -233,16 +234,17 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     bitmap_t *shadowmap = cameraShadow->rendertargets+0;
     bitmap_t *skybox = (bitmap_t*)ubGetPoiner(uniformbuffer, 1);
 
+
     // calculate light dir  (world pos -> light pow)
-    vec_t L;
+    vec_t L, lightDir;
     vec_t lightPos = (vec_t){cameraShadow->pos.x, cameraShadow->pos.y, cameraShadow->pos.z, 0.0f};
-    vec_t lightDir;   vecSub(&lightDir, &lightPos, &iplWorldPos);
+    vecSub(&lightDir, &lightPos, &iplWorldPos);
     vecNormalize(&L, &lightDir);
 
 
     // calculate view dir
-    vec_t V;
-    vec_t viewDir;   vecSub(&viewDir, &camera->pos, &iplWorldPos);
+    vec_t V, viewDir;
+    vecSub(&viewDir, &camera->pos, &iplWorldPos);
     vecNormalize(&V, &viewDir);
 
 
@@ -272,12 +274,12 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     vecNormalize(&N, &N);
 
 
+
     // calc reflection
     vec_t R;
     vecReflect(&R, &V, &N);
     R.w = 0.0;
     vecNormalize(&R, &R);
-
     pixel_t *pxRefl = bmGetPixelLongLat(skybox, R.x, R.y, R.z, 1);
 
 
@@ -285,12 +287,11 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
     float visibility = 1.0f;
     float cosTheta = vecDot(&N, &L);
 
-
     if(cosTheta < 0) {
         visibility = 0.0f;
 
     } else {
-        float bias = fmaxf(1.2f * (1.0f - cosTheta), 0.05f);
+        float bias = max(1.2f * (1.0f - cosTheta), 0.05f);
 
         int nHits = 0;
         int nTests = 0;
@@ -325,7 +326,6 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
 
 
 
-
     // calculate shading
     vec_t ambient = {0.2f, 0.2f, 0.3f, 0.0f};
     vec_t lightColor = {1.3f, 1.2f, 1.0f, 0.6f};
@@ -347,11 +347,12 @@ void fshDefault(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pix
 
 
     // final color
-    pixel->r = fmaxf(0.0f, fminf(finalColor.x + pxRefl->r*0.1f, 1.0f));
-    pixel->g = fmaxf(0.0f, fminf(finalColor.y + pxRefl->g*0.1f, 1.0f));
-    pixel->b = fmaxf(0.0f, fminf(finalColor.z + pxRefl->b*0.1f, 1.0f));
+    pixel->r = max(0.0f, min(finalColor.x + pxRefl->r*0.1f, 1.0f));
+    pixel->g = max(0.0f, min(finalColor.y + pxRefl->g*0.1f, 1.0f));
+    pixel->b = max(0.0f, min(finalColor.z + pxRefl->b*0.1f, 1.0f));
     pixel->a = 1.0;
 
+    sampleEnd("fsh");
 
 }
 
