@@ -10,8 +10,8 @@ typedef struct {
     float b;
     float a;
     float z;
+    int modelID;
     int triangleID;
-    int writeCount;
 } pixel_t;
 
 

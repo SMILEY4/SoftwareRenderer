@@ -7,6 +7,7 @@
 #include "input.h"
 #include <math.h>
 #include <stdio.h>
+#include <pthread.h>
 
 
 
@@ -40,11 +41,60 @@ void rcFreeRenderData(renderdata_t *renderdata) {
 
 // RASTERIZER
 
+void processPixels(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vec_t *iplAttribs) {
+
+    bitmap_t *rendertarget = camera->rendertargets+0;
+    const int rtWidth = rendertarget->width;
+    const int rtHeight = rendertarget->height;
+
+    vec_t iplUV, iplNrm, iplClr;
+
+    for(int x=0; x<rtWidth; x++) {          // TODO: get bounds of model by rasterizer
+        for(int y=0; y<rtHeight; y++) {
+
+            pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
+            if(!pixel) {
+                continue;
+            }
+
+            const int modelID = pixel->modelID;
+            const int triangleID = pixel->triangleID;
+
+            if(triangleID == -1 || modelID == -1 || modelID != model->modelID) {
+                continue;
+            }
+
+            // get vertices
+            triangle_t *triangle = model->triangles+triangleID;
+            vertex_t *v0 = triangle->vertices+0;
+            vertex_t *v1 = triangle->vertices+1;
+            vertex_t *v2 = triangle->vertices+2;
+
+            vec_t pcBary = (vec_t){pixel->r, pixel->g, pixel->b, 0.0f};
+
+            // interpolate vertex attributes
+            interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
+            interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
+            interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
+
+            if(v0->nAttribs > 0) {
+                for(int i=0; i<v0->nAttribs; i++) {
+                    interpolateBary(&iplAttribs[i], &v0->attribs[i], &v1->attribs[i], &v2->attribs[i], &pcBary);
+                }
+            }
+
+            // call fragment shader
+            shader->fsh(camera, model, shader, pixel, &iplUV, &iplNrm, &iplClr, iplAttribs, uniformbuffer);
+
+        }
+    }
 
 
-void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vertex_t *v0, vertex_t *v1, vertex_t *v2, vec_t *iplAttribs) {
+}
 
-    sampleStart("prepRast");
+
+
+void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vertex_t *v0, vertex_t *v1, vertex_t *v2) {
 
     bitmap_t *rendertarget = camera->rendertargets+0;
     const int rtWidth = rendertarget->width;
@@ -77,15 +127,10 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, unifo
     bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rtHeight, (int)v0->position.x, (int)v0->position.y, (int)v2->position.x, (int)v2->position.y);
     bhDrawLineToScanbuffer(rendertarget->scanbufferMin, rendertarget->scanbufferMax, rtHeight, (int)v1->position.x, (int)v1->position.y, (int)v2->position.x, (int)v2->position.y);
 
-    sampleEnd("prepRast");
-    sampleStart("doRast");
-
-
     // rasterize triangle
     static vec_t texelCoords;
     static vec_t baryCoords;
     static vec_t pcBary;
-    static vec_t iplUV, iplNrm, iplClr;
 
     const int yd = yEnd - yStart;
     for(int ys=0; ys<=yd; ys++) {
@@ -99,21 +144,17 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, unifo
         for(int xs=0; xs<=xd; xs++) {
             const int x = xs+xStart;
 
-            sampleStart("procPx");
-
             texelCoords = (vec_t){x+0.5f, y+0.5f, 0, 0};
             barycentric(&baryCoords, &v0->position, &v1->position, &v2->position, &texelCoords);
 
             // test if sample is part of triangle
             if(baryCoords.x < 0 || baryCoords.y < 0 || baryCoords.z < 0) {
-                sampleEnd("procPx");
                 continue;
             }
 
             // get pixel
             pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
             if(!pixel) {
-                sampleEnd("procPx");
                 continue;
             }
 
@@ -126,32 +167,18 @@ void rasterizeTriangle(camera_t *camera, model_t *model, shader_t *shader, unifo
             interpolateBary(&iplPos, &v0->position, &v1->position, &v2->position, &baryCoords);
             const float zPixel = pixel->z;
             if(zPixel < iplPos.z) {
-                sampleEnd("procPx");
                 continue;
             }
             pixel->z = iplPos.z;
+            pixel->modelID = model->modelID;
             pixel->triangleID = v0->triangleID;
 
-            // interpolate vertex attributes
-            interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
-            interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
-            interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
+            pixel->r = pcBary.x;
+            pixel->g = pcBary.y;
+            pixel->b = pcBary.z;
 
-            if(v0->nAttribs > 0) {
-                for(int i=0; i<v0->nAttribs; i++) {
-                    interpolateBary(&iplAttribs[i], &v0->attribs[i], &v1->attribs[i], &v2->attribs[i], &pcBary);
-                }
-            }
-
-            sampleEnd("procPx");
-
-            // call fragment shader
-            shader->fsh(camera, model, shader, pixel, &iplPos, &iplUV, &iplNrm, &iplClr, iplAttribs, uniformbuffer);
-            pixel->writeCount++;
         }
     }
-
-    sampleEnd("doRast");
 
 }
 
@@ -284,17 +311,17 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
         // rasterize
         sampleStart("rastTri");
 
-        rasterizeTriangle(camera, model, shader, uniformbuffer, &v0, &v1, &v2, iplAttribs);
+        rasterizeTriangle(camera, model, shader, uniformbuffer, &v0, &v1, &v2);
 
         sampleEnd("rastTri");
 
-        if(inGetKeyState('r') == IN_DOWN) {
-            bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v1.position.x, (int) v1.position.y, 1.0, 1.0, 1.0);
-            bhDrawLine(rendertarget, (int) v0.position.x, (int) v0.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
-            bhDrawLine(rendertarget, (int) v1.position.x, (int) v1.position.y, (int) v2.position.x, (int) v2.position.y, 1.0, 1.0, 1.0);
-        }
-
     }
+
+
+    // process pixels
+    processPixels(camera, model, shader, uniformbuffer, iplAttribs);
+
+
 
     free(iplAttribs);
     free(v0.attribs);

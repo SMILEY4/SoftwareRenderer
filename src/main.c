@@ -234,7 +234,6 @@ void updateFunc(bitmap_t *displayBuffer) {
             printf("color = %f %f %f %f\n", pixel->r, pixel->g, pixel->b, pixel->a);
             printf("depth = %f\n", pixel->z);
             printf("triangle = %d\n", pixel->triangleID);
-            printf("writeCount = %d\n", pixel->writeCount);
             printf("============\n");
             g_pickedTriangle = pixel->triangleID;
         } else {

@@ -116,8 +116,8 @@ void bmClear(bitmap_t *bitmap, float r, float g, float b, float a) {
             pixel->b = b;
             pixel->a = a;
             pixel->z = 100000.0f;
+            pixel->modelID = -1;
             pixel->triangleID = -1;
-            pixel->writeCount = 0;
         }
     }
 }

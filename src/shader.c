@@ -132,14 +132,13 @@ void vshShadowPass(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader, un
 
 
 
-void fshShadowPass(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplPos, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer) {
+void fshShadowPass(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer) {
     /*
      * set pixel color to fragment depth
      * */
-    float d = reverseDepth(iplPos->z, 0.1f, 50.0f) / 50.0f;
-    pixel->r = iplPos->z;
-    pixel->g = iplPos->z;
-    pixel->b = iplPos->z;
+    pixel->r = pixel->z;
+    pixel->g = pixel->z;
+    pixel->b = pixel->z;
     pixel->a = 1.0f;
 }
 
@@ -448,7 +447,7 @@ void shadeEnvironment(vec_t *outColor, bitmap_t *envmap, vec_t *baseColor, vec_t
 
 
 
-void fshDefault_diablo(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplPos, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer) {
+void fshDefault_diablo(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer) {
 
     sampleStart("fsh");
 
