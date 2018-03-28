@@ -16,7 +16,7 @@ float clearR, clearG, clearB, clearA;
 bitmap_t displayBufferFull;
 bitmap_t displayBufferLow;
 bitmap_t *displayBufferCurrent;
-float lowResScale = 4.0;
+float lowResScale = 6.0;
 int useLowResBuffer = 0;
 
 void (*updateFunction)(bitmap_t *bitmap);

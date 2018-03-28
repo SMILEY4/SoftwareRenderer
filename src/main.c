@@ -93,8 +93,8 @@ void create() {
     mdlUpdateTransform(&modelPlane);
 
 
-    // SKYBOX
-    bmCreateFromPNG(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\Shiodome_Stairs.png");
+    // ENVIRONMENT
+    bmCreateFromPNG(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\Shiodome_Stairs_Env.png");
 
 
     // CAMERA
@@ -118,7 +118,7 @@ void create() {
 
     shaderDefault.psh = pshDefault;
     shaderDefault.vsh = vshDefault;
-    shaderDefault.fsh = fshDefault;
+    shaderDefault.fsh = fshDefault_diablo;
 
 
     // RENDERDATA
@@ -159,7 +159,7 @@ void render(bitmap_t *displayBuffer) {
     if(drawShadow) {
         drawShadow = 0;
         bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f, 0.0f);
-//        rcDrawRenderData(&renderdataShadowPass);
+        rcDrawRenderData(&renderdataShadowPass);
     }
 
     // MAIN PASS
@@ -170,34 +170,8 @@ void render(bitmap_t *displayBuffer) {
     rcDrawRenderData(&renderdataMainPass);
 
     sampleEnd("mainPass");
-    sampelsPrintData();
+//    sampelsPrintData();
 //    samplesReset();
-
-
-//    float max = 1;
-//
-//    for(int x=0; x<displayBuffer->width; x++) {
-//        for(int y=0; y<displayBuffer->height; y++) {
-//            pixel_t *px = bmGetPixelAt(displayBuffer, x, y, 0);
-//            if(px) {
-//                max = (int)fmaxf(max, px->writeCount);
-//            }
-//        }
-//    }
-//
-//
-//    for(int x=0; x<displayBuffer->width; x++) {
-//        for(int y=0; y<displayBuffer->height; y++) {
-//            pixel_t *px = bmGetPixelAt(displayBuffer, x, y, 0);
-//            if(px) {
-//                float v = (float)px->writeCount / max;
-//                px->r = v;
-//                px->g = v;
-//                px->b = v;
-//                px->a = 1.0f;
-//            }
-//        }
-//    }
 
 
 }
@@ -236,6 +210,17 @@ void updateFunc(bitmap_t *displayBuffer) {
     trDrawString(displayBuffer, debugInfo, 10, 300, 20, 2);
 
 
+    // LOW RES RENDERING
+    if(inGetKeyState(32) == IN_DOWN) {
+        if(!dpIsUsingLowRes()) {
+            dpUseLowRes();
+        }
+    } else {
+        if(dpIsUsingLowRes()) {
+            dpUseFullRes();
+        }
+    }
+
     // PRINT PIXEL-INFO
     if(inGetKeyState('i') == IN_RELEASED) {
         int mx = inGetKeyX('i');
@@ -265,7 +250,7 @@ void updateFunc(bitmap_t *displayBuffer) {
 
         bitmap_t screenshot;
         bmCreate(&screenshot, WIDTH*3, HEIGHT*3);
-        bmClear(&screenshot, 0.1f, 0.1f, 0.1f, 1.0);
+        bmClear(&screenshot, 0.4f, 0.4f, 0.4f, 1.0);
 
         camSetRendertargetEXT(&cameraHiRes, &screenshot, 1);
         cameraHiRes.pos = camera.pos;

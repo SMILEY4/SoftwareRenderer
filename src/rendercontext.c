@@ -311,7 +311,6 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
 void rcDrawRenderData(renderdata_t *renderdata) {
     for(int i=0; i<renderdata->nObjects; i++) {
         rcDrawModel(renderdata->cameras[i], renderdata->objects[i], renderdata->shaders[i], &renderdata->buffers[i]);
-        return;
     }
 }
 
