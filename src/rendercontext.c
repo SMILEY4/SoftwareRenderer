@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#define USE_THREADS
+#define N_THREADS 8
 
 
 
@@ -41,15 +43,60 @@ void rcFreeRenderData(renderdata_t *renderdata) {
 
 // RASTERIZER
 
-void processPixels(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer, vec_t *iplAttribs) {
+typedef struct {
+    int column;
+    renderdata_t *renderdata;
+    int dataIndex;
+    vertex_t *vertexBuffer;
+} threaddata_t;
+
+
+static pthread_mutex_t printf_mutex;
+
+int sync_printf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    pthread_mutex_lock(&printf_mutex);
+    vprintf(format, args);
+    pthread_mutex_unlock(&printf_mutex);
+
+    va_end(args);
+}
+
+
+
+
+void *execPixels(void *vargp) {
+
+    threaddata_t data = *(threaddata_t*)vargp;
+
+    renderdata_t *renderdata = data.renderdata;
+    const int dataIndex = data.dataIndex;
+    const int column = data.column;
+
+    vertex_t *vertexBuffer = data.vertexBuffer;
+
+
+    model_t *model = renderdata->objects[dataIndex];
+    camera_t *camera = renderdata->cameras[dataIndex];
+    shader_t *shader = renderdata->shaders[dataIndex];
+    uniformbuffer_t *uniformbuffer = renderdata->buffers+dataIndex;
+
+    vec_t *iplAttribs = NULL;
+    if(model->nVertexAttribs > 0) {
+        iplAttribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+    }
 
     bitmap_t *rendertarget = camera->rendertargets+0;
     const int rtWidth = rendertarget->width;
     const int rtHeight = rendertarget->height;
 
-    vec_t iplUV, iplNrm, iplClr;
+    const int columnWidth = rtWidth / N_THREADS;
+    const int xStart = columnWidth * column;
+    const int xEnd   = columnWidth * (column+1);
 
-    for(int x=0; x<rtWidth; x++) {          // TODO: get bounds of model by rasterizer
+    for(int x=xStart; x<xEnd; x++) {
         for(int y=0; y<rtHeight; y++) {
 
             pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
@@ -65,14 +112,15 @@ void processPixels(camera_t *camera, model_t *model, shader_t *shader, uniformbu
             }
 
             // get vertices
-            triangle_t *triangle = model->triangles+triangleID;
-            vertex_t *v0 = triangle->vertices+0;
-            vertex_t *v1 = triangle->vertices+1;
-            vertex_t *v2 = triangle->vertices+2;
+            vertex_t *v0 = vertexBuffer + (triangleID*3+0);
+            vertex_t *v1 = vertexBuffer + (triangleID*3+1);
+            vertex_t *v2 = vertexBuffer + (triangleID*3+2);
 
             vec_t pcBary = (vec_t){pixel->r, pixel->g, pixel->b, 0.0f};
 
             // interpolate vertex attributes
+            vec_t iplUV, iplNrm, iplClr;
+
             interpolateBary(&iplUV, &v0->texCoord, &v1->texCoord, &v2->texCoord, &pcBary);
             interpolateBary(&iplNrm, &v0->normal, &v1->normal, &v2->normal, &pcBary);
             interpolateBary(&iplClr, &v0->color, &v1->color, &v2->color, &pcBary);
@@ -89,8 +137,49 @@ void processPixels(camera_t *camera, model_t *model, shader_t *shader, uniformbu
         }
     }
 
+    free(iplAttribs);
+
+#ifdef USE_THREADS
+    pthread_exit(NULL);
+#endif
 
 }
+
+
+
+
+void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuffer) {
+
+    pthread_mutex_init(&printf_mutex, NULL);
+    pthread_t thread_ids[N_THREADS];
+    threaddata_t *threaddata;
+
+    for(int i=0; i<N_THREADS; i++) {
+
+        threaddata = malloc(sizeof(threaddata_t));
+        threaddata->dataIndex = dataIndex;
+        threaddata->renderdata = renderdata;
+        threaddata->column = i;
+        threaddata->vertexBuffer = vertexBuffer;
+
+
+#ifndef USE_THREADS
+        execPixels((void*)threaddata);
+#else
+        pthread_create(&thread_ids[i], NULL, execPixels, (void*)threaddata);
+#endif
+
+    }
+
+#ifdef USE_THREADS
+    for(int i=0; i<N_THREADS; i++) {
+        pthread_join(thread_ids[i], NULL);
+    }
+#endif
+
+
+}
+
 
 
 
@@ -229,29 +318,23 @@ void copyVertex(vertex_t *dst, vertex_t *src) {
 
 
 
-void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer) {
+void rcDrawModel(renderdata_t *renderdata, int dataIndex) {
 
     sampleStart("drawModel");
 
-    vec_t *iplAttribs = NULL;
-    if(model->nVertexAttribs > 0) {
-        iplAttribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
-    }
+    model_t *model = renderdata->objects[dataIndex];
+    camera_t *camera = renderdata->cameras[dataIndex];
+    shader_t *shader = renderdata->shaders[dataIndex];
+    uniformbuffer_t *uniformbuffer = renderdata->buffers+dataIndex;
 
-    // get rendertarget
     bitmap_t *rendertarget = camera->rendertargets+0;
     float rtWidth = rendertarget->width;
     float rtHeight = rendertarget->height;
 
     matrix_t sst = camera->screenSpaceTransform;
 
-    // prepare output vertices
-    vertex_t v0;
-    vertex_t v1;
-    vertex_t v2;
-    v0.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
-    v1.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
-    v2.attribs = calloc((size_t)model->nVertexAttribs, sizeof(vec_t));
+    vertex_t *vertexBuffer = malloc(sizeof(vertex_t)*model->nTriangles*3);
+    vec_t *attribBuffer = malloc(sizeof(vec_t)*model->nTriangles*3*model->nVertexAttribs);
 
 
     // call pre-shader
@@ -259,7 +342,7 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
 
     // for each triangle
     const int nTris = model->nTriangles;
-    for(int i=0; i<nTris; i++) {
+    for(int i=0, j=0; i<nTris; i++) {
 
         sampleStart("procVertex");
 
@@ -270,38 +353,51 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
         vertex_t *vo1 = triangle->vertices + 1;
         vertex_t *vo2 = triangle->vertices + 2;
 
+        vertex_t *v0 = vertexBuffer + (j);
+        v0->attribs = attribBuffer+(j*model->nVertexAttribs);
+        j++;
+
+        vertex_t *v1 = vertexBuffer + (j);
+        v1->attribs = attribBuffer+(j*model->nVertexAttribs);
+        j++;
+
+        vertex_t *v2 = vertexBuffer + (j);
+        v2->attribs = attribBuffer+(j*model->nVertexAttribs);
+        j++;
+
+
         // copy values
-        copyVertex(&v0, vo0);
-        copyVertex(&v1, vo1);
-        copyVertex(&v2, vo2);
+        copyVertex(v0, vo0);
+        copyVertex(v1, vo1);
+        copyVertex(v2, vo2);
 
         // transform / project vertices
-        shader->vsh(vo0, &v0, shader, uniformbuffer);
-        shader->vsh(vo1, &v1, shader, uniformbuffer);
-        shader->vsh(vo2, &v2, shader, uniformbuffer);
+        shader->vsh(vo0, v0, shader, uniformbuffer);
+        shader->vsh(vo1, v1, shader, uniformbuffer);
+        shader->vsh(vo2, v2, shader, uniformbuffer);
 
-        projectVertex(&v0, &v0, &sst);
-        projectVertex(&v1, &v1, &sst);
-        projectVertex(&v2, &v2, &sst);
+        projectVertex(v0, v0, &sst);
+        projectVertex(v1, v1, &sst);
+        projectVertex(v2, v2, &sst);
 
         // cull depth
-        if ((v0.position.z < 0 || v0.position.z > 1) || (v1.position.z < 0 || v1.position.z > 1) || (v2.position.z < 0 || v2.position.z > 1)) {
+        if ((v0->position.z < 0 || v0->position.z > 1) || (v1->position.z < 0 || v1->position.z > 1) || (v2->position.z < 0 || v2->position.z > 1)) {
             sampleEnd("procVertex");
             continue;
         }
 
         // cull viewspace
         int nOutside = 0;
-        if ((v0.position.x < 0 || v0.position.x > rtWidth) || (v0.position.y < 0 || v0.position.y > rtHeight)) { nOutside++; }
-        if ((v1.position.x < 0 || v1.position.x > rtWidth) || (v1.position.y < 0 || v1.position.y > rtHeight)) { nOutside++; }
-        if ((v2.position.x < 0 || v2.position.x > rtWidth) || (v2.position.y < 0 || v2.position.y > rtHeight)) { nOutside++; }
+        if ((v0->position.x < 0 || v0->position.x > rtWidth) || (v0->position.y < 0 || v0->position.y > rtHeight)) { nOutside++; }
+        if ((v1->position.x < 0 || v1->position.x > rtWidth) || (v1->position.y < 0 || v1->position.y > rtHeight)) { nOutside++; }
+        if ((v2->position.x < 0 || v2->position.x > rtWidth) || (v2->position.y < 0 || v2->position.y > rtHeight)) { nOutside++; }
         if (nOutside == 3) {
             sampleEnd("procVertex");
             continue;
         }
 
         // cull backspace
-        if (cullBackface(&v0.position, &v1.position, &v2.position)) {
+        if (cullBackface(&v0->position, &v1->position, &v2->position)) {
             sampleEnd("procVertex");
             continue;
         }
@@ -311,22 +407,17 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
         // rasterize
         sampleStart("rastTri");
 
-        rasterizeTriangle(camera, model, shader, uniformbuffer, &v0, &v1, &v2);
+        rasterizeTriangle(camera, model, shader, uniformbuffer, v0, v1, v2);
 
         sampleEnd("rastTri");
 
     }
 
-
     // process pixels
-    processPixels(camera, model, shader, uniformbuffer, iplAttribs);
+    processPixels(renderdata, dataIndex, vertexBuffer);
 
-
-
-    free(iplAttribs);
-    free(v0.attribs);
-    free(v1.attribs);
-    free(v2.attribs);
+    free(attribBuffer);
+    free(vertexBuffer);
 
     sampleEnd("drawModel");
 
@@ -337,7 +428,7 @@ void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuff
 
 void rcDrawRenderData(renderdata_t *renderdata) {
     for(int i=0; i<renderdata->nObjects; i++) {
-        rcDrawModel(renderdata->cameras[i], renderdata->objects[i], renderdata->shaders[i], &renderdata->buffers[i]);
+        rcDrawModel(renderdata, i);
     }
 }
 

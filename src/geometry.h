@@ -4,13 +4,11 @@
 
 #include <stdbool.h>
 
-
-typedef struct {
-    float x;
-    float y;
-    float z;
-    float w;
+typedef union {
+    struct {float x, y, z, w; };
+    struct {float r, g, b, a; };
 } vec_t;
+
 
 
 typedef struct {

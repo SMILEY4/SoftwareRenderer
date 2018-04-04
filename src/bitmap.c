@@ -99,6 +99,9 @@ void bmDrawTo(bitmap_t *target, bitmap_t *img, float scale) {
             tgtPixel->r = imgPixel->r;
             tgtPixel->g = imgPixel->g;
             tgtPixel->b = imgPixel->b;
+            tgtPixel->z = imgPixel->z;
+            tgtPixel->modelID = imgPixel->modelID;
+            tgtPixel->triangleID = imgPixel->triangleID;
         }
     }
 

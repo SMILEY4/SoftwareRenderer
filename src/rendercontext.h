@@ -21,7 +21,7 @@ void rcCreateRenderData(renderdata_t *renderdata, int nModels, unsigned int ubMa
 
 void rcFreeRenderData(renderdata_t *renderdata);
 
-void rcDrawModel(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer);
+void rcDrawModel(renderdata_t *renderdata, int dataIndex);
 
 void rcDrawRenderData(renderdata_t *renderdata);
 

@@ -104,7 +104,8 @@ void create() {
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
 
     vec_t lightPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
-    camCreateFS(&cameraShadow, 800, 800, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
+//    camCreateFS(&cameraShadow, 800, 800, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
+    camCreateFS(&cameraShadow, 400, 400, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
     camUpdate(&cameraShadow);
 
     camCreateEXT(&cameraHiRes, WIDTH*3, HEIGHT*3, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
@@ -173,6 +174,7 @@ void render(bitmap_t *displayBuffer) {
 //    sampelsPrintData();
 //    samplesReset();
 
+//    bmDrawTo(displayBuffer, cameraShadow.rendertargets+0, 1);
 
 }
 
