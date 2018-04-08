@@ -186,6 +186,66 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
 
 
 
+void bmCreateFromPNGCompressedHDR(bitmap_t *bitmap, char *filepath, float max) {
+
+    // load png
+    unsigned error;
+    unsigned char *image;
+    unsigned w, h;
+    unsigned char *png = 0;
+    size_t  pngsize;
+    error = lodepng_load_file(&png, &pngsize, filepath);
+    if(!error) {
+        error = lodepng_decode32(&image, &w, &h, png, pngsize);
+    }
+    if(error) {
+        printf("error %u: %s\n", error, lodepng_error_text(error));
+    }
+
+    // store in bitmap
+    bmCreate(bitmap, (int)w, (int)h);
+    for(unsigned int y=0; y<h; y++) {
+        for (unsigned int x=0; x<w; x++) {
+            pixel_t *pixel = bmGetPixelAt(bitmap, x, y, 0);
+            *pixel = (pixel_t){0.0f, 0.0f, 0.0f, 0.0f};
+            if(pixel) {
+                int or = (int)(image[4 * y * w + 4 * x + 0]);
+                int og = (int)(image[4 * y * w + 4 * x + 1]);
+                int ob = (int)(image[4 * y * w + 4 * x + 2]);
+                int oa = (int)(image[4 * y * w + 4 * x + 3]);
+
+                int rgba = oa;
+                rgba = rgba << 8;
+                rgba = rgba | ob;
+                rgba = rgba << 8;
+                rgba = rgba | og;
+                rgba = rgba << 8;
+                rgba = rgba | or;
+
+                int ib = rgba &                     0b1111111111;
+                int ig = rgba &           0b11111111110000000000; ig = ig >> 10;
+                int ir = rgba & 0b111111111100000000000000000000; ir = ir >> 20;
+
+                float r = ((float)ir / 1023.0f) * max;
+                float g = ((float)ig / 1023.0f) * max;
+                float b = ((float)ib / 1023.0f) * max;
+
+                pixel->r = r;
+                pixel->g = g;
+                pixel->b = b;
+
+            }
+        }
+    }
+    // clean up png
+    free(png);
+    free(image);
+
+}
+
+
+
+
 void bmSaveToFile(bitmap_t *bitmap, char *filepath) {
 
     int width = bitmap->width;
@@ -195,10 +255,14 @@ void bmSaveToFile(bitmap_t *bitmap, char *filepath) {
     for(int y=0; y<height; y++) {
         for(int x=0; x<width; x++) {
             pixel_t *px = bmGetPixelAt(bitmap, x, y, 0);
-            image[4 * width * y + 4 * x + 0] = (unsigned char)(px->r*255);
-            image[4 * width * y + 4 * x + 1] = (unsigned char)(px->g*255);
-            image[4 * width * y + 4 * x + 2] = (unsigned char)(px->b*255);
-            image[4 * width * y + 4 * x + 3] = (unsigned char)(px->a*255);
+            float r = max(0.0f, min(px->r, 1.0f));
+            float g = max(0.0f, min(px->g, 1.0f));
+            float b = max(0.0f, min(px->b, 1.0f));
+            float a = max(0.0f, min(px->a, 1.0f));
+            image[4 * width * y + 4 * x + 0] = (unsigned char)(r*255);
+            image[4 * width * y + 4 * x + 1] = (unsigned char)(g*255);
+            image[4 * width * y + 4 * x + 2] = (unsigned char)(b*255);
+            image[4 * width * y + 4 * x + 3] = (unsigned char)(a*255);
         }
     }
 

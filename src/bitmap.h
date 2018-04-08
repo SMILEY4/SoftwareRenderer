@@ -46,6 +46,8 @@ void bmCreate(bitmap_t *bitmap, unsigned int width, unsigned int height);
 
 void bmCreateFromPNG(bitmap_t *bitmap, char *filepath);
 
+void bmCreateFromPNGCompressedHDR(bitmap_t *bitmap, char *filepath, float max);
+
 void bmSaveToFile(bitmap_t *bitmap, char *filepath);
 
 void bmDispose(bitmap_t *bitmap);
