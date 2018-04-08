@@ -21,6 +21,7 @@ camera_t cameraHiRes;
 model_t modelDiablo;
 model_t modelPlane;
 
+bitmap_t envmap;
 bitmap_t skybox;
 
 shader_t shaderShadowPass;
@@ -46,30 +47,31 @@ void create() {
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
 //    };
 
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
+//    char *texturesDiablo[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+//    };
+
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\sphere.obj", &obj_diablo);
     char *texturesDiablo[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
     };
 
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\sphere.obj", &obj_diablo);
-//    char *texturesDiablo[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
-//    };
     mdlCreateFromObj(&obj_diablo, &modelDiablo, texturesDiablo, 5, 2, 0);
     objFree(&obj_diablo);
 
     modelDiablo.translation = (vec_t){ 0, 1.75f,  0, 0};
     modelDiablo.rotation =    (vec_t){ 0,   0,  0, 0};
-//    modelDiablo.scale =       (vec_t){ 0.06, 0.06, 0.06, 0};
-    modelDiablo.scale =       (vec_t){ 10, 10, 10, 0};
+    modelDiablo.scale =       (vec_t){ 0.06, 0.06, 0.06, 0};
+//    modelDiablo.scale =       (vec_t){ 10, 10, 10, 0};
     mdlUpdateTransform(&modelDiablo);
 
 
@@ -94,7 +96,8 @@ void create() {
 
 
     // ENVIRONMENT
-    bmCreateFromPNG(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\Shiodome_Stairs_Env.png");
+    bmCreateFromPNGCompressedHDR(&envmap, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\skybox\\Shiodome_Stairs_Env_CPHDR.png", 2.328125f);
+    bmCreateFromPNGCompressedHDR(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\skybox\\Shiodome_Stairs_CPHDR.png", 37.0f);
 
 
     // CAMERA
@@ -141,7 +144,7 @@ void create() {
 
     for(int i=0; i<renderdataMainPass.nObjects; i++) {
         ubSetPointer(&renderdataMainPass.buffers[i], 0, &cameraShadow);
-        ubSetPointer(&renderdataMainPass.buffers[i], 1, &skybox);
+        ubSetPointer(&renderdataMainPass.buffers[i], 1, &envmap);
     }
 
 
@@ -174,7 +177,7 @@ void render(bitmap_t *displayBuffer) {
 //    sampelsPrintData();
 //    samplesReset();
 
-//    bmDrawTo(displayBuffer, cameraShadow.rendertargets+0, 1);
+    bmDrawTo(displayBuffer, &envmap, 1);
 
 }
 

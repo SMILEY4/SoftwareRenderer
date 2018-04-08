@@ -146,7 +146,7 @@ void fshShadowPass(camera_t *camera, model_t *model, shader_t *shader, pixel_t *
  * u1: mvp_shadow
  * u2: mdlTransform
  * p0: camera_shadow
- * p1: skybox
+ * p1: envmap
  * */
 
 
@@ -219,8 +219,6 @@ void vshDefault(vertex_t *vertexIn, vertex_t *vertexOut, shader_t *shader, unifo
 
 
 
-
-// Specular BRDF Functions
 
 
 
@@ -348,7 +346,7 @@ void fshDefault_diablo(camera_t *camera, model_t *model, shader_t *shader, pixel
     vec_t ssColor = (vec_t){0.0f, 0.0f, 0.0f, 0.0f};
     const float metalness = 0.0;
     float roughness = 1.0f - ( (pxSpec->r+pxSpec->g+pxSpec->b) / 3.0f);
-    roughness = pow5(roughness) * 0.45f + 0.2f;
+//    roughness = pow5(roughness) * 0.45f + 0.2f;
 
     // calculate shading
     vec_t colorDefaultLight; shadeDefaultLight(&colorDefaultLight, &N, &V, &L, &lightColor, &baseColor, &baseColor, &ssColor, metalness, roughness, 1.0f);
@@ -360,13 +358,18 @@ void fshDefault_diablo(camera_t *camera, model_t *model, shader_t *shader, pixel
     vec_t colorShading = (vec_t){0,0,0,0};
     vecAdd(&colorShading, &colorShading, &colorDefaultLight);
     vecAdd(&colorShading, &colorShading, &colorEnv);
+//    vecAdd(&colorShading, &colorShading, &(vec_t){pxGlow->r*3.0f, pxGlow->g*3.0f, pxGlow->b*3.0f, 0.0f});
 
-
-    pixel->r = limit(colorShading.r);
-    pixel->g = limit(colorShading.g);
-    pixel->b = limit(colorShading.b);
+    pixel->r = colorShading.r;
+    pixel->g = colorShading.g;
+    pixel->b = colorShading.b;
     pixel->a = 1.0f;
 
+
+    pixel->r = colorEnv.r;
+    pixel->g = colorEnv.g;
+    pixel->b = colorEnv.b;
+    pixel->a = 1.0f;
 
 
 }

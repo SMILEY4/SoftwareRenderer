@@ -48,21 +48,8 @@ typedef struct {
     renderdata_t *renderdata;
     int dataIndex;
     vertex_t *vertexBuffer;
+    int minX, maxX, minY, maxY;
 } threaddata_t;
-
-
-static pthread_mutex_t printf_mutex;
-
-int sync_printf(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-
-    pthread_mutex_lock(&printf_mutex);
-    vprintf(format, args);
-    pthread_mutex_unlock(&printf_mutex);
-
-    va_end(args);
-}
 
 
 
@@ -74,6 +61,8 @@ void *execPixels(void *vargp) {
     renderdata_t *renderdata = data.renderdata;
     const int dataIndex = data.dataIndex;
     const int column = data.column;
+    const int minY = data.minY;
+    const int maxY = data.maxY;
 
     vertex_t *vertexBuffer = data.vertexBuffer;
 
@@ -97,7 +86,7 @@ void *execPixels(void *vargp) {
     const int xEnd   = columnWidth * (column+1);
 
     for(int x=xStart; x<xEnd; x++) {
-        for(int y=0; y<rtHeight; y++) {
+        for(int y=minY; y<=maxY; y++) {
 
             pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
             if(!pixel) {
@@ -148,9 +137,8 @@ void *execPixels(void *vargp) {
 
 
 
-void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuffer) {
+void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuffer, int minX, int minY, int maxX, int maxY) {
 
-    pthread_mutex_init(&printf_mutex, NULL);
     pthread_t thread_ids[N_THREADS];
     threaddata_t *threaddata;
 
@@ -161,7 +149,10 @@ void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuff
         threaddata->renderdata = renderdata;
         threaddata->column = i;
         threaddata->vertexBuffer = vertexBuffer;
-
+        threaddata->minX = minX;
+        threaddata->minY = minY;
+        threaddata->maxX = maxX;
+        threaddata->maxY = maxY;
 
 #ifndef USE_THREADS
         execPixels((void*)threaddata);
@@ -340,6 +331,11 @@ void rcDrawModel(renderdata_t *renderdata, int dataIndex) {
     // call pre-shader
     shader->psh(camera, model, shader, uniformbuffer);
 
+    int minX = (int)rtWidth;
+    int minY = (int)rtHeight;
+    int maxX = 0;
+    int maxY = 0;
+    
     // for each triangle
     const int nTris = model->nTriangles;
     for(int i=0, j=0; i<nTris; i++) {
@@ -406,6 +402,19 @@ void rcDrawModel(renderdata_t *renderdata, int dataIndex) {
 
         // rasterize
         sampleStart("rastTri");
+        
+        minX = min(minX, (int)floorf(v0->position.x));
+        minY = min(minY, (int)floorf(v0->position.y));
+        maxX = max(maxX, (int)ceilf(v0->position.x));
+        maxY = max(maxY, (int)ceilf(v0->position.y));
+        minX = min(minX, (int)floorf(v1->position.x));
+        minY = min(minY, (int)floorf(v1->position.y));
+        maxX = max(maxX, (int)ceilf(v1->position.x));
+        maxY = max(maxY, (int)ceilf(v1->position.y));
+        minX = min(minX, (int)floorf(v2->position.x));
+        minY = min(minY, (int)floorf(v2->position.y));
+        maxX = max(maxX, (int)ceilf(v2->position.x));
+        maxY = max(maxY, (int)ceilf(v2->position.y));
 
         rasterizeTriangle(camera, model, shader, uniformbuffer, v0, v1, v2);
 
@@ -414,7 +423,11 @@ void rcDrawModel(renderdata_t *renderdata, int dataIndex) {
     }
 
     // process pixels
-    processPixels(renderdata, dataIndex, vertexBuffer);
+    minX = max(0, min(minX, (int)rtWidth-1));
+    minY = max(0, min(minY, (int)rtHeight-1));
+    maxX = max(0, min(maxX, (int)rtWidth-1));
+    maxY = max(0, min(maxY, (int)rtHeight-1));
+    processPixels(renderdata, dataIndex, vertexBuffer, minX, minY, maxX, maxY);
 
     free(attribBuffer);
     free(vertexBuffer);
