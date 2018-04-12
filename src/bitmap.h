@@ -1,14 +1,12 @@
 #ifndef SOFTWARERENDERER_BITMAP_H
 #define SOFTWARERENDERER_BITMAP_H
 
+#include "geometry.h"
 #include <stdbool.h>
 
 
 typedef struct {
-    float r;
-    float g;
-    float b;
-    float a;
+    float r, g, b, a;
     float z;
     int modelID;
     int triangleID;

@@ -5,6 +5,9 @@
 #include "model.h"
 #include "uniforms.h"
 
+float rough;
+
+
 typedef struct shader_t shader_t;
 
 struct shader_t {
@@ -13,8 +16,6 @@ struct shader_t {
     void (*fsh)(camera_t *camera, model_t *model, shader_t *shader, pixel_t *pixel, vec_t *iplUV, vec_t *iplNrm, vec_t *iplClr, vec_t *iplAttribs, uniformbuffer_t *uniformbuffer);
 };
 
-
-void shInit();
 
 
 void pshShadowPass(camera_t *camera, model_t *model, shader_t *shader, uniformbuffer_t *uniformbuffer);

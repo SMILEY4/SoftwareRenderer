@@ -95,3 +95,63 @@ void bhDrawLine(bitmap_t *bitmap, int ax, int ay, int bx, int by, float r, float
 
 }
 
+
+
+
+
+void bhDrawLine3D(bitmap_t *bitmap, int ax, int ay, float az, int bx, int by, float bz, float r, float g, float b) {
+
+    if(!bitmap) {
+        return;
+    }
+
+    int x0 = ax;
+    int y0 = ay;
+    int x1 = bx;
+    int y1 = by;
+
+    int dx = (int)fabsf(x1-x0);
+    int dy = (int)fabsf(y1-y0);
+
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+
+    int err = dx - dy;
+    int e2;
+    int currentX = x0;
+    int currentY = y0;
+
+    const float len = sqrtf( (ax-bx)*(ax-bx) + (ay-by)*(ay-by));
+
+    while(true) {
+
+        const float l = sqrtf( (ax-currentX)*(ax-currentX) + (ay-currentY)*(ay-currentY));
+        const float a = l / len;
+        float currentZ = az * (1.0f-a) + bz * a;
+
+        pixel_t *pixel = bmGetPixelAt(bitmap, currentX, currentY, 0);
+        if(pixel) {
+            if(currentZ-0.005f < pixel->z) {
+                pixel->r = r;
+                pixel->g = g;
+                pixel->b = b;
+                pixel->a = 1.0;
+            }
+        }
+
+        if(currentX == x1 && currentY == y1) {
+            break;
+        }
+
+        e2 = 2*err;
+        if(e2 > -1 * dy) {
+            err = err - dy;
+            currentX = currentX + sx;
+        }
+        if(e2 < dx) {
+            err = err + dx;
+            currentY = currentY + sy;
+        }
+    }
+
+}

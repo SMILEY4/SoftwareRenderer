@@ -23,6 +23,9 @@ void rcFreeRenderData(renderdata_t *renderdata);
 
 void rcDrawModel(renderdata_t *renderdata, int dataIndex);
 
-void rcDrawRenderData(renderdata_t *renderdata);
+void rcDrawWireframeModel(renderdata_t *renderdata, int dataIndex);
+
+void rcDrawRenderData(renderdata_t *renderdata, int drawAsWireframe);
+
 
 #endif

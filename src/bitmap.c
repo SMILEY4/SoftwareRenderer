@@ -181,6 +181,7 @@ void bmCreateFromPNG(bitmap_t *bitmap, char *filepath) {
     // clean up png
     free(png);
     free(image);
+
 }
 
 
@@ -279,8 +280,8 @@ void bmSaveToFile(bitmap_t *bitmap, char *filepath) {
 
 void bmDispose(bitmap_t *bitmap) {
     if(bitmap->pixels) {
-        free(bitmap->pixels);
         bitmap->pixels = NULL;
+        free(bitmap->pixels);
         free(bitmap->scanbufferMin);
         free(bitmap->scanbufferMax);
     }

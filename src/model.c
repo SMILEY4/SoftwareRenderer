@@ -102,8 +102,8 @@ void mdlCreateFromObj(obj_model_t *objmodel, model_t *model, char **textureFiles
 
     // load texture
     model->nTextures = nTextures;
-    if(textureFiles && nTextures > 0) {
-        model->textures = calloc(nTextures, sizeof(bitmap_t));
+    model->textures = calloc(nTextures, sizeof(bitmap_t));
+    if(textureFiles) {
         for(int i=0; i<nTextures; i++) {
             char *filename = textureFiles[i];
             bitmap_t texture;

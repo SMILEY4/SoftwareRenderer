@@ -5,6 +5,7 @@ CMakeLists.txt
 watchdata_log.txt
 todo.txt
 *.png
+*.obj
 
 # Prerequisites
 *.d

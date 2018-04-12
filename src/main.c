@@ -6,6 +6,7 @@
 #include "stopwatch.h"
 #include "model.h"
 #include "bitmap.h"
+#include "shaderutils.h"
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
@@ -13,15 +14,17 @@
 #define WIDTH 800
 #define HEIGHT 600
 
+#define SCREENSHOT_SCALE 3
 
 camera_t camera;
 camera_t cameraShadow;
 camera_t cameraHiRes;
 
-model_t modelDiablo;
+model_t modelMain;
 model_t modelPlane;
 
-bitmap_t envmap;
+bitmap_t heightmap;
+
 bitmap_t skybox;
 
 shader_t shaderShadowPass;
@@ -36,82 +39,155 @@ int drawShadow;
 
 void create() {
 
-    // MODEL DIABLO
-    obj_model_t obj_diablo;
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head.obj", &obj_diablo);
-//    char *texturesDiablo[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_nm_tangent.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_spec.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\african_head\\african_head_SSS.png"
-//    };
+    unsigned int nTextures = 5;
 
-//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_diablo);
-//    char *texturesDiablo[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_glow.png"
-//    };
+    // MODEL MAIN
+    obj_model_t obj_model;
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\sphere\\sphere6b.obj", &obj_model);
 
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\sphere.obj", &obj_diablo);
-    char *texturesDiablo[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
-    };
+    mdlCreateFromObj(&obj_model, &modelMain, NULL, nTextures, 2, 0);
+    objFree(&obj_model);
 
-    mdlCreateFromObj(&obj_diablo, &modelDiablo, texturesDiablo, 5, 2, 0);
-    objFree(&obj_diablo);
-
-    modelDiablo.translation = (vec_t){ 0, 1.75f,  0, 0};
-    modelDiablo.rotation =    (vec_t){ 0,   0,  0, 0};
-    modelDiablo.scale =       (vec_t){ 0.06, 0.06, 0.06, 0};
-//    modelDiablo.scale =       (vec_t){ 10, 10, 10, 0};
-    mdlUpdateTransform(&modelDiablo);
+    modelMain.translation = (vec_t){ 0, 0, 0, 0};
+    modelMain.rotation =    (vec_t){ 0, 0, 0, 0};
+    modelMain.scale =       (vec_t){ 0.035, 0.035, 0.035, 0};
+    mdlUpdateTransform(&modelMain);
 
 
-
-    // MODEL PLANE
+    // MODEL GROUND
     obj_model_t obj_plane;
-    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\groundSub.obj", &obj_plane);
-    char *texturesPlane[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_nm_tangent.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_spec.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
-    };
-    mdlCreateFromObj(&obj_plane, &modelPlane, texturesPlane, 5, 2, 1);
+    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\groundSub3.obj", &obj_plane);
+
+    mdlCreateFromObj(&obj_plane, &modelPlane, NULL, nTextures, 2, 1);
     objFree(&obj_plane);
 
     modelPlane.translation = (vec_t){ 0, -8, -4, 0};
     modelPlane.rotation =    (vec_t){ 0,  0,  0, 0};
-    modelPlane.scale =       (vec_t){ 0.1f, 0.1f, 0.1f, 0};
+    modelPlane.scale =       (vec_t){ 0.13f, 0.1f, 0.13f, 0};
     mdlUpdateTransform(&modelPlane);
 
+    bmCreateFromPNG(&heightmap,  "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png");
 
-    // ENVIRONMENT
-    bmCreateFromPNGCompressedHDR(&envmap, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\skybox\\Shiodome_Stairs_Env_CPHDR.png", 2.328125f);
-    bmCreateFromPNGCompressedHDR(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\skybox\\Shiodome_Stairs_CPHDR.png", 37.0f);
+
+    // LOAD TEXTURES
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-normal4-ue.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\greasy-pan-2-Unreal-Engine\\greasy-pan-2-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\greasy-pan-2-Unreal-Engine\\greasy-pan-2-normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\greasy-pan-2-Unreal-Engine\\greasy-pan-2-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\greasy-pan-2-Unreal-Engine\\greasy-pan-2-metal.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-metalness.png",
+//    };
+//    bmCreateFromPNG(&heightmap,  "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\cratered-rock-Unreal-Engine\\cratered-rock-height.png");
+
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-ao2.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-metalness.png",
+//    };
+//    bmCreateFromPNG(&heightmap,  "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\harshbricks-Unreal-Engine\\harshbricks-height5-16.png");
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-albedo2.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-normal2.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-ao2.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-metalness.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_basecolor.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_metallic.png",
+//    };
+//        char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_basecolor.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_normal-dx.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_metalness.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\dry-dirt2-Unreal-Engine-2\\dry-dirt2-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\dry-dirt2-Unreal-Engine-2\\dry-dirt2-normal2.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\dry-dirt2-Unreal-Engine-2\\dry-dirt2-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\dry-dirt2-Unreal-Engine-2\\dry-dirt2-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\dry-dirt2-Unreal-Engine-2\\dry-dirt2-metalness.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\leaf-fall1-ue4\\leaf-fall1-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\leaf-fall1-ue4\\leaf-fall3-normal-ue.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\leaf-fall1-ue4\\leaf-fall1-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\leaf-fall1-ue4\\leaf-fall1-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\leaf-fall1-ue4\\leaf-fall1-metalness.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\wornpaintedcement-Unreal_Engine\\wornpaintedcement-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\wornpaintedcement-Unreal_Engine\\wornpaintedcement-norrmal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\wornpaintedcement-Unreal_Engine\\wornpaintedcement-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\wornpaintedcement-Unreal_Engine\\wornpaintedcement-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\wornpaintedcement-Unreal_Engine\\wornpaintedcement-metalness.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bamboo-wood-semigloss-Unreal-Engine\\bamboo-wood-semigloss-albedo.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bamboo-wood-semigloss-Unreal-Engine\\bamboo-wood-semigloss-normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bamboo-wood-semigloss-Unreal-Engine\\bamboo-wood-semigloss-roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bamboo-wood-semigloss-Unreal-Engine\\bamboo-wood-semigloss-ao.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bamboo-wood-semigloss-Unreal-Engine\\bamboo-wood-semigloss-metal.png",
+//    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_basecolor.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_normal-DX.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_AO.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_metallic.png",
+//    };
+    char *texturePaths[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_basecolor.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_normal.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_roughness.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_metallic.png",
+    };
+
+    for(int i=0; i<nTextures; i++) {
+        char *filename = texturePaths[i];
+        bitmap_t texture;
+        bmCreateFromPNG(&texture, filename);
+        memcpy(modelMain.textures+i, &texture, sizeof(texture));
+        memcpy(modelPlane.textures+i, &texture, sizeof(texture));
+    }
+
+
+    bmCreateFromPNG(&skybox, "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\skybox\\Shiodome_Stairs.png");
 
 
     // CAMERA
-    vec_t camPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
+    vec_t camPos = (vec_t){4.4036f, 0.0539f, 12.7757f, 0.0f};
     vec_t camTgt = (vec_t){0, 0, 0, 1};
     vec_t camUp = (vec_t){0, 1, 0, 1};
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
 
-    vec_t lightPos = (vec_t){-14.6018f, 4.0f, 17.6737f, 0.0f};
-//    camCreateFS(&cameraShadow, 800, 800, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
-    camCreateFS(&cameraShadow, 400, 400, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
+    vec_t lightPos = (vec_t){-4.1879f, 7.6163, 9.3500, 0.0f};
+    camCreateFS(&cameraShadow, 800, 800, 1, 70.0f, 0.1f, 50.0f, lightPos, camTgt, camUp);
     camUpdate(&cameraShadow);
 
-    camCreateEXT(&cameraHiRes, WIDTH*3, HEIGHT*3, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
+    camCreateEXT(&cameraHiRes, WIDTH*SCREENSHOT_SCALE, HEIGHT*SCREENSHOT_SCALE, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
     camUpdate(&cameraHiRes);
 
 
@@ -126,16 +202,20 @@ void create() {
 
 
     // RENDERDATA
-    rcCreateRenderData(&renderdataShadowPass, 2, 1, 0);
-    renderdataShadowPass.objects[0] = &modelDiablo;
+    rcCreateRenderData(&renderdataShadowPass, 2, 2, 1);
+    renderdataShadowPass.objects[0] = &modelMain;
     renderdataShadowPass.shaders[0] = &shaderShadowPass;
     renderdataShadowPass.cameras[0] = &cameraShadow;
     renderdataShadowPass.objects[1] = &modelPlane;
     renderdataShadowPass.shaders[1] = &shaderShadowPass;
     renderdataShadowPass.cameras[1] = &cameraShadow;
 
-    rcCreateRenderData(&renderdataMainPass, 2, 3, 2);
-    renderdataMainPass.objects[0] = &modelDiablo;
+    for(int i=0; i<renderdataShadowPass.nObjects; i++) {
+        ubSetPointer(&renderdataShadowPass.buffers[i], 0, &heightmap);
+    }
+
+    rcCreateRenderData(&renderdataMainPass, 2, 3, 3);
+    renderdataMainPass.objects[0] = &modelMain;
     renderdataMainPass.shaders[0] = &shaderDefault;
     renderdataMainPass.cameras[0] = &camera;
     renderdataMainPass.objects[1] = &modelPlane;
@@ -144,14 +224,16 @@ void create() {
 
     for(int i=0; i<renderdataMainPass.nObjects; i++) {
         ubSetPointer(&renderdataMainPass.buffers[i], 0, &cameraShadow);
-        ubSetPointer(&renderdataMainPass.buffers[i], 1, &envmap);
+        ubSetPointer(&renderdataMainPass.buffers[i], 1, &heightmap);
+        ubSetPointer(&renderdataMainPass.buffers[i], 2, &skybox);
     }
+
 
 
     // MISC
     drawShadow = 1;
     trCreateFont();
-    shInit();
+    initShaderUtils();
 
 }
 
@@ -163,21 +245,13 @@ void render(bitmap_t *displayBuffer) {
     if(drawShadow) {
         drawShadow = 0;
         bmClear(&cameraShadow.rendertargets[0], 1.0f, 1.0f, 1.0f, 0.0f);
-        rcDrawRenderData(&renderdataShadowPass);
+        rcDrawRenderData(&renderdataShadowPass, 0);
     }
-
     // MAIN PASS
+    rcDrawRenderData(&renderdataMainPass, 0);
+//    rcDrawRenderData(&renderdataMainPass, 1);
 
-//    samplesReset();
-    sampleStart("mainPass");
-
-    rcDrawRenderData(&renderdataMainPass);
-
-    sampleEnd("mainPass");
-//    sampelsPrintData();
-//    samplesReset();
-
-    bmDrawTo(displayBuffer, &envmap, 1);
+    rough = 0.0;
 
 }
 
@@ -187,8 +261,7 @@ void render(bitmap_t *displayBuffer) {
 
 void updateFunc(bitmap_t *displayBuffer) {
 
-    static long tick;
-    tick++;
+    if(inGetKeyState(27) == IN_DOWN) { exit(0); } // 27 = escape
 
     // UPDATE CAMERA
     double camSpeed = 0.4 ;
@@ -282,11 +355,11 @@ void updateFunc(bitmap_t *displayBuffer) {
 void exitFunc() {
     rcFreeRenderData(&renderdataShadowPass);
     rcFreeRenderData(&renderdataMainPass);
-    mdlFreeModel(&modelDiablo);
-    mdlFreeModel(&modelPlane);
+    mdlFreeModel(&modelMain);
+//    mdlFreeModel(&modelPlane);
+//    bmDispose(&envmap);
     camDispose(&cameraShadow);
     dpDispose();
-    samplesFreeData();
 }
 
 
@@ -294,8 +367,6 @@ void exitFunc() {
 
 
 int main(int argc, char *argv[]) {
-
-    samplesReset();
 
     dpCreate(argc, argv, WIDTH, HEIGHT, 60, 2.0f);
     dpSetBackgroundColor(0.4, 0.4, 0.4, 1.0);

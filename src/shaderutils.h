@@ -12,13 +12,24 @@
 #define INV_INFINITE 0.00000001f
 #define pow2(x) ((x)*(x))
 #define pow5(x) ((x)*(x)*(x)*(x)*(x))
-#define mix(x,y,a) ((x)*(1.0f-(a))+(y)*(a))
+#define mix(x,y,a) ( (x)*(1.0f-(a))+(y)*(a) )
 #define limit(x) ( (x) < 0 ? 0 : (x > 1 ? 1 : x))
 
 
 
 
+// misc
+
+void initShaderUtils();
+
 float randFloat();
+
+float calcShadow(vec_t *N, vec_t *L, vec_t *shadowPos, bitmap_t *shadowmap, float zNear, float zFar);
+
+void calcNormal(vec_t *Nout, vec_t *Nvert, vec_t *Nmap);
+
+void calcReflection(vec_t *outColor, vec_t *R, bitmap_t *img, float roughness, float metalness, vec_t *baseColor, vec_t *N, vec_t *V);
+
 
 
 // Normal Distribution Function (NDF)
@@ -66,7 +77,7 @@ float Diffuse_Lambert(float NdotV);
 // calculate shading
 
 float calcSpecular(float cNdotH, float NdotL, float NdotV, float f0, float roughness, vec_t *V, vec_t *N);
-void shadeDefaultLight(vec_t *outColor, vec_t *N, vec_t *V, vec_t *L, vec_t *LightColor, vec_t *BaseColor, vec_t *RimColor, vec_t *SSColor, float metalness, float roughness, float rimPower);
+void shadeDefaultLight(vec_t *outColor, vec_t *N, vec_t *V, vec_t *L, vec_t *LightColor, vec_t *BaseColor, float metalness, float roughness);
 void shadeEnvironment(vec_t *outColor, bitmap_t *envmap, vec_t *baseColor, vec_t *N);
 
 
