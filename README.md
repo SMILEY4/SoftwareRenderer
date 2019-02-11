@@ -11,7 +11,7 @@ A 3d Software Renderer written in pure C.
 - Simple Textrenderer (for debugging-info)
 - PBR-Shader
 - Normal Mapping
-- Reflections
+- IBL/Reflections
 - Displacement Mapping
 
 
