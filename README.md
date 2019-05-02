@@ -17,6 +17,10 @@ A 3d Software Renderer written in pure C.
 
 
 ### Screenshots
+
+![alt text](https://i.imgur.com/njZZLeP.png)
+Model by Samuel (arshlevon) Sharit
+
 ![alt text](https://i.imgur.com/Uss4z6Y.png)
 
 ![alt text](https://i.imgur.com/D8i1sVw.png)
@@ -31,6 +35,3 @@ A 3d Software Renderer written in pure C.
 
 PBR-Materials from https://freepbr.com/
 
-
-![alt text](https://i.imgur.com/njZZLeP.png)
-Model by Samuel (arshlevon) Sharit
