@@ -4,6 +4,7 @@ cmake-build-release/
 CMakeLists.txt
 watchdata_log.txt
 todo.txt
+.gitignore
 *.png
 *.obj
 

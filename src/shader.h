@@ -5,9 +5,6 @@
 #include "model.h"
 #include "uniforms.h"
 
-float rough;
-
-
 typedef struct shader_t shader_t;
 
 struct shader_t {

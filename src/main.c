@@ -7,6 +7,7 @@
 #include "model.h"
 #include "bitmap.h"
 #include "shaderutils.h"
+#include "postprocess.h"
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
@@ -29,6 +30,8 @@ bitmap_t skybox;
 
 shader_t shaderShadowPass;
 shader_t shaderDefault;
+
+postProcessEffect_t ppEffectColor;
 
 renderdata_t renderdataShadowPass;
 renderdata_t renderdataMainPass;
@@ -53,6 +56,18 @@ void create() {
     modelMain.scale =       (vec_t){ 0.035, 0.035, 0.035, 0};
     mdlUpdateTransform(&modelMain);
 
+//    obj_model_t obj_model;
+//    objParse("D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose.obj", &obj_model);
+//
+//    mdlCreateFromObj(&obj_model, &modelMain, NULL, nTextures, 2, 0);
+//    objFree(&obj_model);
+//
+//    modelMain.translation = (vec_t){ 0, 2, 0, 0};
+//    modelMain.rotation =    (vec_t){ 0, 0, 0, 0};
+//    modelMain.scale =       (vec_t){ 10, 10, 10, 0};
+//    mdlUpdateTransform(&modelMain);
+
+
 
     // MODEL GROUND
     obj_model_t obj_plane;
@@ -70,6 +85,13 @@ void create() {
 
 
     // LOAD TEXTURES
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_nm_tangent.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\diablo\\diablo3_pose_spec.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_glow.png"
+//    };
 //    char *texturePaths[5] = {
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-albedo.png",
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\agedplanks1-ue\\agedplanks1-normal4-ue.png",
@@ -108,13 +130,13 @@ void create() {
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-ao2.png",
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\mixedmoss-ue4\\mixedmoss-metalness.png",
 //    };
-//    char *texturePaths[5] = {
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_basecolor.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_normal.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_roughness.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
-//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_metallic.png",
-//    };
+    char *texturePaths[5] = {
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_basecolor.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_normal.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_roughness.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\rustediron1-alt2-Unreal-Engine\\rustediron2_metallic.png",
+    };
 //        char *texturePaths[5] = {
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_basecolor.png",
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\bathroomtile1-dx\\bathroomtile1_normal-dx.png",
@@ -157,13 +179,13 @@ void create() {
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_AO.png",
 //            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\darktiles1-ue4\\darktiles1_metallic.png",
 //    };
-    char *texturePaths[5] = {
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_basecolor.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_normal.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_roughness.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
-            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_metallic.png",
-    };
+//    char *texturePaths[5] = {
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_basecolor.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_normal.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_roughness.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\plane\\plane_diffuse.png",
+//            "D:\\LukasRuegner\\Programmieren\\C\\SoftwareRenderer\\res\\materials\\gold-scuffed-Unreal-Engine\\gold-scuffed_metallic.png",
+//    };
 
     for(int i=0; i<nTextures; i++) {
         char *filename = texturePaths[i];
@@ -178,7 +200,8 @@ void create() {
 
 
     // CAMERA
-    vec_t camPos = (vec_t){4.4036f, 0.0539f, 12.7757f, 0.0f};
+    vec_t camPos = (vec_t){4.4036f, -6.3461f, 12.7757f, 0.0f};
+//    vec_t camPos = (vec_t){4.4036f, 0.0539f, 12.7757f, 0.0f}; // material cam position (sphere+ground pbr showcase scene)
     vec_t camTgt = (vec_t){0, 0, 0, 1};
     vec_t camUp = (vec_t){0, 1, 0, 1};
     camCreateEXT(&camera, WIDTH, HEIGHT, 70.0, 0.1f, 50.0f, camPos, camTgt, camUp);
@@ -201,8 +224,12 @@ void create() {
     shaderDefault.fsh = fshDefault_diablo;
 
 
+    // POST-PROCESS-EFFECTS
+    ppEffectColor.ppFx = ppPassThrough;
+
+
     // RENDERDATA
-    rcCreateRenderData(&renderdataShadowPass, 2, 2, 1);
+    rcCreateRenderData(&renderdataShadowPass, 2, 2, 1, 0);
     renderdataShadowPass.objects[0] = &modelMain;
     renderdataShadowPass.shaders[0] = &shaderShadowPass;
     renderdataShadowPass.cameras[0] = &cameraShadow;
@@ -214,13 +241,14 @@ void create() {
         ubSetPointer(&renderdataShadowPass.buffers[i], 0, &heightmap);
     }
 
-    rcCreateRenderData(&renderdataMainPass, 2, 3, 3);
+    rcCreateRenderData(&renderdataMainPass, 2, 3, 3, 1);
     renderdataMainPass.objects[0] = &modelMain;
     renderdataMainPass.shaders[0] = &shaderDefault;
     renderdataMainPass.cameras[0] = &camera;
     renderdataMainPass.objects[1] = &modelPlane;
     renderdataMainPass.shaders[1] = &shaderDefault;
     renderdataMainPass.cameras[1] = &camera;
+    renderdataMainPass.ppEffects[0] = &ppEffectColor;
 
     for(int i=0; i<renderdataMainPass.nObjects; i++) {
         ubSetPointer(&renderdataMainPass.buffers[i], 0, &cameraShadow);
@@ -250,9 +278,6 @@ void render(bitmap_t *displayBuffer) {
     // MAIN PASS
     rcDrawRenderData(&renderdataMainPass, 0);
 //    rcDrawRenderData(&renderdataMainPass, 1);
-
-    rough = 0.0;
-
 }
 
 
@@ -313,7 +338,6 @@ void updateFunc(bitmap_t *displayBuffer) {
             printf("depth = %f\n", pixel->z);
             printf("triangle = %d\n", pixel->triangleID);
             printf("============\n");
-            g_pickedTriangle = pixel->triangleID;
         } else {
             printf("Failed: Out-of-bounds!");
         }

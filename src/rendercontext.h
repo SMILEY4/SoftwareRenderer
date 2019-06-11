@@ -4,20 +4,24 @@
 #include "camera.h"
 #include "model.h"
 #include "shader.h"
+#include "postprocess.h"
 
-
-int g_pickedTriangle;
 
 typedef struct {
+
     shader_t **shaders;
     model_t **objects;
     camera_t **cameras;
     uniformbuffer_t *buffers;
     int nObjects;
+
+    postProcessEffect_t **ppEffects;
+    int nPPEffects;
+
 } renderdata_t;
 
 
-void rcCreateRenderData(renderdata_t *renderdata, int nModels, unsigned int ubMaxElements, unsigned int ubMaxPointers);
+void rcCreateRenderData(renderdata_t *renderdata, unsigned int nModels, unsigned int ubMaxElements, unsigned int ubMaxPointers, unsigned int nPPEffects);
 
 void rcFreeRenderData(renderdata_t *renderdata);
 

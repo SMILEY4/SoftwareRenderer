@@ -5,6 +5,8 @@
 #include "bitmap.h"
 #include "geometry.h"
 #include "input.h"
+#include "camera.h"
+#include "postprocess.h"
 #include <math.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -14,7 +16,9 @@
 
 
 
-void rcCreateRenderData(renderdata_t *renderdata, int nObjects, unsigned int ubMaxElements, unsigned int ubMaxPointers) {
+
+void rcCreateRenderData(renderdata_t *renderdata, unsigned int nObjects, unsigned int ubMaxElements, unsigned int ubMaxPointers, unsigned int nPPEffects) {
+
     renderdata->shaders = calloc((size_t)nObjects, sizeof(shader_t*));
     renderdata->objects = calloc((size_t)nObjects, sizeof(model_t*));
     renderdata->cameras = calloc((size_t)nObjects, sizeof(camera_t*));
@@ -23,6 +27,9 @@ void rcCreateRenderData(renderdata_t *renderdata, int nObjects, unsigned int ubM
         ubCreateBuffer(renderdata->buffers+i, ubMaxElements, ubMaxPointers);
     }
     renderdata->nObjects = nObjects;
+
+    renderdata->ppEffects = calloc( (size_t)nPPEffects, sizeof(postProcessEffect_t*));
+    renderdata->nPPEffects = nPPEffects;
 }
 
 
@@ -36,6 +43,101 @@ void rcFreeRenderData(renderdata_t *renderdata) {
     free(renderdata->objects);
     free(renderdata->cameras);
     free(renderdata->buffers);
+    free(renderdata->ppEffects);
+}
+
+
+
+
+
+
+// POST PROCESS
+
+typedef struct {
+    int column;
+    renderdata_t *renderdata;
+    bitmap_t *rendertarget;
+} threaddata_postprocess_t;
+
+
+
+
+void *execPixelPostProcess(void *vargp) {
+
+    threaddata_postprocess_t data = *(threaddata_postprocess_t*)vargp;
+
+    const int column = data.column;
+    renderdata_t *renderdata = data.renderdata;
+    bitmap_t *rendertarget = data.rendertarget;
+
+    const int rtWidth = rendertarget->width;
+    const int rtHeight = rendertarget->height;
+
+    const int columnWidth = rtWidth / N_THREADS;
+    const int xStart = columnWidth * column;
+    const int xEnd   = columnWidth * (column+1);
+
+    vec_t tmpColor = (vec_t){0.0f, 0.0f, 0.0f, 0.0f};
+
+    for(int x=xStart; x<xEnd; x++) {
+        for (int y=0; y<rtHeight; y++) {
+
+            pixel_t *pixel = bmFastGetPixelAt(rendertarget, x, y);
+            if(!pixel) {
+                continue;
+            }
+
+            const int nEffects = renderdata->nPPEffects;
+            for(int i=0; i<nEffects; i++) {
+
+                postProcessEffect_t *effect = renderdata->ppEffects[i];
+                effect->ppFx(pixel, &tmpColor);
+
+                pixel->r = tmpColor.r;
+                pixel->g = tmpColor.g;
+                pixel->b = tmpColor.b;
+                pixel->a = tmpColor.a;
+
+            }
+        }
+    }
+
+#ifdef USE_THREADS
+    pthread_exit(NULL);
+#endif
+
+}
+
+
+
+
+void processPixelPostProcess(renderdata_t *renderdata, bitmap_t *rendertarget) {
+
+    pthread_t thread_ids[N_THREADS];
+    threaddata_postprocess_t *threaddata;
+
+    for(int i=0; i<N_THREADS; i++) {
+
+        threaddata = malloc(sizeof(threaddata_postprocess_t));
+        threaddata->column = i;
+        threaddata->rendertarget = rendertarget;
+        threaddata->renderdata = renderdata;
+
+#ifndef USE_THREADS
+        execPixelPostProcess((void*)threaddata);
+#else
+        pthread_create(&thread_ids[i], NULL, execPixelPostProcess, (void*)threaddata);
+#endif
+
+    }
+
+#ifdef USE_THREADS
+    for(int i=0; i<N_THREADS; i++) {
+        pthread_join(thread_ids[i], NULL);
+    }
+#endif
+
+
 }
 
 
@@ -49,14 +151,14 @@ typedef struct {
     int dataIndex;
     vertex_t *vertexBuffer;
     int minX, maxX, minY, maxY;
-} threaddata_t;
+} threaddata_shading_t;
 
 
 
 
-void *execPixels(void *vargp) {
+void *execPixelShading(void *vargp) {
 
-    threaddata_t data = *(threaddata_t*)vargp;
+    threaddata_shading_t data = *(threaddata_shading_t*)vargp;
 
     renderdata_t *renderdata = data.renderdata;
     const int dataIndex = data.dataIndex;
@@ -137,14 +239,14 @@ void *execPixels(void *vargp) {
 
 
 
-void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuffer, int minX, int minY, int maxX, int maxY) {
+void processPixelShading(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuffer, int minX, int minY, int maxX, int maxY) {
 
     pthread_t thread_ids[N_THREADS];
-    threaddata_t *threaddata;
+    threaddata_shading_t *threaddata;
 
     for(int i=0; i<N_THREADS; i++) {
 
-        threaddata = malloc(sizeof(threaddata_t));
+        threaddata = malloc(sizeof(threaddata_shading_t));
         threaddata->dataIndex = dataIndex;
         threaddata->renderdata = renderdata;
         threaddata->column = i;
@@ -155,9 +257,9 @@ void processPixels(renderdata_t *renderdata, int dataIndex, vertex_t *vertexBuff
         threaddata->maxY = maxY;
 
 #ifndef USE_THREADS
-        execPixels((void*)threaddata);
+        execPixelShading((void*)threaddata);
 #else
-        pthread_create(&thread_ids[i], NULL, execPixels, (void*)threaddata);
+        pthread_create(&thread_ids[i], NULL, execPixelShading, (void *) threaddata);
 #endif
 
     }
@@ -415,10 +517,13 @@ void rcDrawModel(renderdata_t *renderdata, int dataIndex) {
     minY = max(0, min(minY, (int)rtHeight-1));
     maxX = max(0, min(maxX, (int)rtWidth-1));
     maxY = max(0, min(maxY, (int)rtHeight-1));
-    processPixels(renderdata, dataIndex, vertexBuffer, minX, minY, maxX, maxY);
+    processPixelShading(renderdata, dataIndex, vertexBuffer, minX, minY, maxX, maxY);
 
     free(attribBuffer);
     free(vertexBuffer);
+
+    // post process effects
+    processPixelPostProcess(renderdata, renderdata->cameras[0]->rendertargets+0);
 
 }
 

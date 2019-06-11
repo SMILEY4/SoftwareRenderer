@@ -7,6 +7,7 @@
 #include "stopwatch.h"
 #include <math.h>
 #include <stdio.h>
+#include "input.h"
 
 #define DPM_HEIGHT 5.0f
 
@@ -261,7 +262,6 @@ void fshDefault_diablo(camera_t *camera, model_t *model, shader_t *shader, pixel
     pixel->g = finalColor.g;
     pixel->b = finalColor.b;
     pixel->a = 1.0;
-
 
 }
 
